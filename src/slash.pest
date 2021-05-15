@@ -1,0 +1,64 @@
+WHITESPACE = _{  " " | "\t" | ("\\" ~ NEWLINE) }
+COMMENT = _{ "#" ~ (!(NEWLINE | EOI) ~ ANY)* ~ (NEWLINE | &EOI) }
+
+word_char = _{ !(WHITESPACE | NEWLINE | "\"" | "|" | ">" | " " | ";" | "(" | ")" | "<" | "," | "{" | "}") ~ ANY }
+word = @{ word_char+ }
+
+file = { SOI ~ (block | statement | NEWLINE | ";")* ~ EOI }
+block = { "{" ~ (block | statement | NEWLINE | ";")* ~ "}" }
+statement = _{ var_declaration | function_declaration | var_assignment | indexed_var_assignment | function_call | for_in_statement | for_std_statement | if_statement | return_statement | break_statement | continue_statement | chain }
+
+chain = { command ~ pipe* ~ redirection? ~ capture? }
+pipe = { "|" ~ command }
+redirection = { (">" | ">>") ~ command }
+capture = { "$>" ~ var_name }
+command = { (word | string_literal | "$" ~ var_name | "$(" ~ expression ~ ")") + }
+
+for_in_statement = {
+    ( "for" ~ var_name ~ "in" ~ expression ~ block ) |
+    ( "for" ~ "(" ~ var_name ~ "in" ~ expression ~ ")" ~ block )
+}
+
+for_std_statement = {
+    "for" ~ var_name ~ "=" ~ expression  ~ ";" ~ expression ~ ";" ~ var_assignment ~ block |
+    "for" ~ "(" ~ var_name ~ "=" ~ expression  ~ ";" ~ expression ~ ";" ~ var_assignment ~ ")" ~ block
+}
+
+if_statement = { "if" ~ expression ~ (statement | block) ~ ("else" ~ "if" ~ expression ~ (statement | block))* ~ ("else"  ~ (statement | block))? }
+
+function_declaration = { "function" ~ var_name ~ "(" ~ (var_name ~ ("," ~ var_name)*)? ~ ")" ~ block }
+
+return_statement = { "return" ~ expression }
+break_statement = { "break" }
+continue_statement = { "continue" }
+
+var_declaration = { "let" ~ var_name ~  "=" ~ expression  }
+var_assignment = { var_name ~ "=" ~ expression }
+indexed_var_assignment = { var_name ~ "[" ~ expression ~ "]" ~ "=" ~ expression }
+var_name = @{ (ASCII_ALPHA | "_")+ }
+
+expression = { term ~ ( operator ~ term | indexer ~ term ~ "]" )* }
+operator = _{ add | subtract | multiply| divide | power | equals | less_than | greater_than | not_equals | and | or }
+    add = { "+" }
+    subtract = { "-" }
+    multiply = { "*" }
+    divide = { "/" }
+    power = { "^" }
+    equals = { "==" }
+    less_than = { "<" }
+    greater_than = { ">" }
+    not_equals = { "!=" }
+    and = { "&&" }
+    or = { "||" }
+
+indexer = { "[" }
+
+term = _{ literal | function_call | var_name | "$" ~ var_name |  "(" ~ expression ~ ")"  }
+function_call = { var_name ~"(" ~ ( expression ~ ("," ~ expression)*)? ~ ")" }
+literal = { numeric_literal | string_literal | list_literal | map_literal }
+numeric_literal = @{ ASCII_DIGIT+ ~ ("." ~ ASCII_DIGIT+)? }
+string_literal = @{ "\"" ~ NEWLINE? ~ string_content ~ "\"" }
+list_literal = { "[" ~ ( expression ~ ( "," ~ expression )* )? ~ ","? ~ "]" }
+map_literal = { "{" ~ ( map_field ~ ( "," ~ map_field )* )? ~ ","? ~ "}" }
+map_field = { ( string_literal | var_name ) ~ ":" ~ expression }
+string_content = { ( "\\\"" | !"\"" ~ ANY )* }
