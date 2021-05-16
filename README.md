@@ -241,8 +241,6 @@ stdout(proc_res) # stdout of the process as a string, throws error if the output
 stderr(proc_res) # stderr of the process as a string, throws error if the output is not a valid utf8 string
 exit_code(proc_res) # exit code  of the process
 ```
-###parse_float
-Converts a string to a float
 ### include
 Includes another slash source file into the current closure. It will execute any statement 
 in the included file and update the current closure with any result. This is intended to be
