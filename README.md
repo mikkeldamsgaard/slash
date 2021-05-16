@@ -229,3 +229,37 @@ stdout(proc_res) # stdout of the process as a string, throws error if the output
 stderr(proc_res) # stderr of the process as a string, throws error if the output is not a valid utf8 string
 exit_code(proc_res) # exit code  of the process
 ```
+####parse_float
+Converts a string to a float
+####include
+Includes another slash source file into the current closure. It will execute any statement 
+in the included file and update the current closure with any result. This is intended to be
+used to import common functions.
+```javascript
+include("common.sl")
+```
+The path to search is relative to the file being executed, except when the input is from stdin, 
+then the path is the current working dir.
+####exit
+Exits with the given exit code
+```javascript
+exit(0)
+```
+####cwd
+Returns the current working directory
+####split
+Splits a string into a list
+```javascript
+split("42 12"," ") # ["42","12"]
+```
+####join
+Opposite of split, it joins a list of strings into a string
+```javascript
+join(["4", "2"], "") # "42"
+```
+
+####start_with
+Checks if a string starts with another string
+```javascript
+start_with("42123","42") # 1
+```

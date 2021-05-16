@@ -29,7 +29,13 @@ impl From<Error<Rule>> for SlashError {
         SlashError { err: e.to_string(), line, column, error_line: String::from(""), parse: true }
     }
 }
-
+impl<T> From<std::result::Result<T, SlashError>> for SlashError  {
+    fn from(e: Result<T, SlashError>) -> Self {
+        if let Err(e) = e {
+            e
+        } else { panic!("Internal error");}
+    }
+}
 // impl ToString for SlashError {
 //     fn to_string(&self) -> String {
 //         if self.parse { return self.err.to_owned() };

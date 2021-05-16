@@ -21,6 +21,7 @@ use crate::value::Value;
 use std::rc::Rc;
 use crate::error::SlashError;
 use std::cell::RefCell;
+use std::path::Path;
 
 #[derive(Debug, Clone)]
 pub enum ExecuteResult<'a> {
@@ -43,12 +44,14 @@ pub struct SlashParser;
 pub struct Slash<'a> {
     source: &'a str,
     stdout: Box<RefCell<dyn Write>>,
-    stderr: Box<RefCell<dyn Write>>
+    stderr: Box<RefCell<dyn Write>>,
+    cur_dir: &'a Path
 }
 
 impl Slash<'_> {
-    pub fn new<'a>(source:&'a str, stdout: Box<RefCell<dyn Write>>, stderr: Box<RefCell<dyn Write>>) -> Slash<'a> {
-        Slash { source, stdout, stderr}
+    pub fn new<'a>(source:&'a str, stdout: Box<RefCell<dyn Write>>,
+                   stderr: Box<RefCell<dyn Write>>, cur_dir: &'a Path) -> Slash<'a> {
+        Slash { source, stdout, stderr, cur_dir}
     }
 
     pub fn run(&self) -> Result<(), SlashError> {

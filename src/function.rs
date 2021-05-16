@@ -10,6 +10,10 @@ use crate::pest::Parser;
 use crate::error::SlashError;
 use pest::Span;
 use std::str::FromStr;
+use std::{fs, env};
+use std::ffi::OsStr;
+use std::rc::Rc;
+use std::cell::RefCell;
 
 pub enum FunctionCallResult {
     NoValue(String),
@@ -30,7 +34,10 @@ pub fn function_call(pair: Pair<Rule>, closure: &mut Closure, slash: &Slash) -> 
 
     match function {
         "print" => { print(args, slash); }
-        "println" => { print(args, slash); slash.write_stdout("\n"); }
+        "println" => {
+            print(args, slash);
+            slash.write_stdout("\n");
+        }
         "len" => { return len(args, spans); }
         "to_str" => { return to_str(args, spans); }
         "parse_float" => { return parse_float(args, spans); }
@@ -42,6 +49,12 @@ pub fn function_call(pair: Pair<Rule>, closure: &mut Closure, slash: &Slash) -> 
         "stdout" => { return stdout(args, spans); }
         "stderr" => { return stderr(args, spans); }
         "exit_code" => { return exit_code(args, spans); }
+        "exit" => { return exit(args, spans); }
+        "include" => { include(args, spans, closure, slash)?; }
+        "cwd" => { return cwd(args,spans); }
+        "split" => { return split(args,spans); }
+        "starts_with" => { return starts_with(args,spans); }
+        "join" => { return join(args,spans); }
 
         _ => {
             if !closure.has_var(function) {
@@ -195,4 +208,90 @@ fn exit_code(args: Vec<Value>, spans: Vec<Span>) -> Result<FunctionCallResult, S
     } else {
         Err(invalid_type_with_expected(&spans[1], &args[0], "ProcessResult"))
     }
+}
+
+fn exit(args: Vec<Value>, spans: Vec<Span>) -> Result<FunctionCallResult, SlashError> {
+    verify_formal_args(&args, &spans, 1)?;
+    if let Value::Number(n) = &args[0] {
+        std::process::exit(*n as i32)
+    } else {
+        Err(invalid_type_with_expected(&spans[1], &args[0], "Number"))
+    }
+}
+
+fn include(args: Vec<Value>, spans: Vec<Span>, closure: &mut Closure, slash: &Slash) -> Result<FunctionCallResult, SlashError> {
+    verify_formal_args(&args, &spans, 1)?;
+    match &args[0] {
+        Value::String(file) => {
+            let mut file = String::from(file);
+            if !file.starts_with("/") {
+                let cd = slash.cur_dir.to_str().ok_or::<Result<&OsStr,SlashError>>(Err(SlashError::new(&spans[0], &format!("Could not retrieve current dir during include"))))?;
+                //let cd = dbg!(cd).to_str().ok_or::<Result<&str,SlashError>>(Err(SlashError::new(&spans[0], &format!("Could not retrieve current dir during include"))))?;
+                file = cd.to_owned() + "/" + &file;
+            }
+
+            let src = fs::read_to_string(&file).or(Err(SlashError::new(&spans[1], &format!("Failed to load content of file {}", &file))))?;
+            let mut pairs = crate::SlashParser::parse(Rule::file, &src)?;
+            slash.execute(pairs.next().unwrap(), closure)?;
+
+            Ok(FunctionCallResult::NoValue(String::from("include")))
+        }
+        _ => Err(invalid_type_with_expected(&spans[1], &args[0], "Number")),
+    }
+}
+
+fn cwd(args: Vec<Value>, spans: Vec<Span>) -> Result<FunctionCallResult, SlashError> {
+    verify_formal_args(&args, &spans, 0)?;
+    let cwd = env::current_dir().or(Err(SlashError::new(&spans[0], &format!("Could not retrieve current dir"))))?;
+    let cwd = cwd.to_str().ok_or::<Result<&str,SlashError>>(Err(SlashError::new(&spans[0], &format!("Could not retrieve current dir"))))?;
+    Ok(FunctionCallResult::Value(Value::String(String::from(cwd))))
+}
+
+fn get_string(arg: &Value, span: &Span) -> Result<String, SlashError> {
+    match arg {
+        Value::String(s) => Ok(s.clone()),
+        _ => Err(invalid_type_with_expected(span, arg, "String"))
+    }
+}
+
+fn get_list(arg: &Value, span: &Span) -> Result<Rc<RefCell<Vec<Value>>>, SlashError> {
+    match arg {
+        Value::List(l) => Ok(l.clone()),
+        _ => Err(invalid_type_with_expected(span, arg, "List"))
+    }
+}
+
+fn split(args: Vec<Value>, spans: Vec<Span>) -> Result<FunctionCallResult, SlashError> {
+    verify_formal_args(&args, &spans, 2)?;
+    let s = get_string(&args[0], &spans[1])?;
+    let p = get_string(&args[1], &spans[2])?;
+
+    let mut res = Vec::new();
+    for e in s.split(&p) {
+        res.push(Value::String(e.to_owned()));
+    }
+
+    Ok(FunctionCallResult::Value(Value::List(Rc::new(RefCell::new(res)))))
+}
+
+fn starts_with(args: Vec<Value>, spans: Vec<Span>) -> Result<FunctionCallResult, SlashError> {
+    verify_formal_args(&args, &spans, 2)?;
+    let s = get_string(&args[0], &spans[1])?;
+    let p = get_string(&args[1], &spans[2])?;
+    Ok(FunctionCallResult::Value(Value::Number(if s.starts_with(&p) {1.0} else {0.0})))
+}
+
+fn join(args: Vec<Value>, spans: Vec<Span>) -> Result<FunctionCallResult, SlashError> {
+    verify_formal_args(&args, &spans, 2)?;
+    let l = get_list(&args[0], &spans[1])?;
+    let c = get_string(&args[1], &spans[2])?;
+    let mut s_vec = Vec::new();
+    for sv in l.borrow().iter() {
+        match sv {
+            Value::String(s) => s_vec.push(s.clone()),
+            _=> return Err(SlashError::new(&spans[1], &format!("Expected a list of strings, but found a {} in the list", sv.value_type())))
+        }
+    }
+
+    Ok(FunctionCallResult::Value(Value::String(s_vec.join(&c))))
 }
