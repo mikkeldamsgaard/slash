@@ -10,7 +10,7 @@ fn main() {
     if args.len() == 1 {
         stdin().read_to_string(&mut src).expect("Could not read from stdin");
     } else if args.len() == 2 {
-        src = fs::read_to_string(&args[2]).expect(&format!("Failed to read file {}", &args[2]));
+        src = fs::read_to_string(&args[1]).expect(&format!("Failed to read file {}", &args[1]));
     }
 
     let res = slash::Slash::new(&src, Box::new(RefCell::new(stdout())), Box::new(RefCell::new(stderr()))).run();
