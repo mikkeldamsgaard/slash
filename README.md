@@ -218,21 +218,21 @@ ls -al # No redirect, so prints on stdout
 ```
 
 ## Builtin functions
-###print
+### print
 Prints to standard out
 ```javascript
 print(1,2,"abc") # prints 1 2 abc
 ```
 prints arguments seperated with a space
-###println
+### println
 Identical to print, but add a newline
-###len
+### len
 Returns the length of a string, list or the number of keys in a table
-###to_str
+### to_str
 Creates a string from a value
-###parse_float
+### parse_float
 Converts a string to a float
-###is_#####
+### is_#####
 is_float, is_string, is_list, is_table, is_process_result
 Returns 1 if the argument is the corresponding type
 ### process result extracts
@@ -243,7 +243,7 @@ exit_code(proc_res) # exit code  of the process
 ```
 ###parse_float
 Converts a string to a float
-###include
+### include
 Includes another slash source file into the current closure. It will execute any statement 
 in the included file and update the current closure with any result. This is intended to be
 used to import common functions.
@@ -252,25 +252,25 @@ include("common.sl")
 ```
 The path to search is relative to the file being executed, except when the input is from stdin, 
 then the path is the current working dir.
-###exit
+### exit
 Exits with the given exit code
 ```javascript
 exit(0)
 ```
-###cwd
+### cwd
 Returns the current working directory
-###split
+### split
 Splits a string into a list
 ```javascript
 split("42 12"," ") # ["42","12"]
 ```
-###join
+### join
 Opposite of split, it joins a list of strings into a string
 ```javascript
 join(["4", "2"], "") # "42"
 ```
 
-###start_with
+### start_with
 Checks if a string starts with another string
 ```javascript
 start_with("42123","42") # 1
