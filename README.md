@@ -1,6 +1,6 @@
 # Slash
 The system level language for getting the job done.
-###Motivation
+##Motivation
 Bash is an awesome shell, but for shell programming, bash is
 very antiquated, arcane, hard to reason about and just plain 
 annoying to implement any logic in. 
@@ -34,24 +34,28 @@ j = j + 34
 ```
 
 There are the following value types
-####Number
+
+**Number**
 ```javascript
 3.0
 ```
 Numbers are 64 bit floating point
-####String
+
+**String**
 ```
 "a string\non a new line
 and a third line"
 ```
 A string is enclosed by "" and accepts the standard escape 
 characters. Newlines are allows in strings.
-####List
+
+**List**
 ```javascript
 [1,"abc",42.0, [0,42]]
 ```
 A list of values 
-####Table
+
+**Table**
 ```javascript
 { 
   f1: 42, 
@@ -61,7 +65,8 @@ A list of values
 ```
 A key to value table. Keys can optionally be quoted
 
-####Indexed assignment for Table and Lists
+**Indexed assignment for Table and Lists**
+
 It is possible to assign a new value to an entry in a list or a key in a table
 
 ```javascript
@@ -75,17 +80,21 @@ j["f1"] = 42
 print(f) # { "f1": 42 }
 ```
 
-####ProcessResult
+**ProcessResult**
+
 A special value type that is used to store the result of the 
 execution of a child process
 
 
 ## Control structure
 A standard set of control structures are available
-####for
+
+**for**
+
 A loop construct. It has two forms, a standard form adapted from 
 the traditional c-for and a for-in construct
-#####Standard loop
+
+_Standard loop_
 ```javascript
 let j = 0
 for i=0;i<42;i=i+1 { 
@@ -101,7 +110,8 @@ for (i=0;i<42;i=i+1) {
 }
 print(j)
 ```
-#####for-in loop
+
+_for-in loop_
 ```javascript
 let j = 0
 for i in [42,3,81,7] {
@@ -118,7 +128,9 @@ for (i in [42,3,81,7]) {
 print(j)
 ```
 For in works only on lists. break/continue works as expected
-####if
+
+**if**
+
 Standard if-then-else construct.
 ```javascript
 if (i==0) {
@@ -192,7 +204,7 @@ Tables and Lists are passed by reference, Numbers and Strings are passed by valu
 Comments are started by a hash (#) and continues to the end 
 of the line
 
-## Process spawn
+### Process spawn
 Borrowed from standard shell scripts, the pipe and redirect 
 works like in a traditional shell
 ```bash
@@ -206,32 +218,32 @@ ls -al # No redirect, so prints on stdout
 ```
 
 ## Builtin functions
-####print
+###print
 Prints to standard out
 ```javascript
 print(1,2,"abc") # prints 1 2 abc
 ```
 prints arguments seperated with a space
-####println
+###println
 Identical to print, but add a newline
-####len
+###len
 Returns the length of a string, list or the number of keys in a table
-####to_str
+###to_str
 Creates a string from a value
-####parse_float
+###parse_float
 Converts a string to a float
-####is_#####
+###is_#####
 is_float, is_string, is_list, is_table, is_process_result
 Returns 1 if the argument is the corresponding type
-#### process result extracts
+### process result extracts
 ```javascript
 stdout(proc_res) # stdout of the process as a string, throws error if the output is not a valid utf8 string
 stderr(proc_res) # stderr of the process as a string, throws error if the output is not a valid utf8 string
 exit_code(proc_res) # exit code  of the process
 ```
-####parse_float
+###parse_float
 Converts a string to a float
-####include
+###include
 Includes another slash source file into the current closure. It will execute any statement 
 in the included file and update the current closure with any result. This is intended to be
 used to import common functions.
@@ -240,25 +252,25 @@ include("common.sl")
 ```
 The path to search is relative to the file being executed, except when the input is from stdin, 
 then the path is the current working dir.
-####exit
+###exit
 Exits with the given exit code
 ```javascript
 exit(0)
 ```
-####cwd
+###cwd
 Returns the current working directory
-####split
+###split
 Splits a string into a list
 ```javascript
 split("42 12"," ") # ["42","12"]
 ```
-####join
+###join
 Opposite of split, it joins a list of strings into a string
 ```javascript
 join(["4", "2"], "") # "42"
 ```
 
-####start_with
+###start_with
 Checks if a string starts with another string
 ```javascript
 start_with("42123","42") # 1
