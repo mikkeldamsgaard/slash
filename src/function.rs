@@ -29,7 +29,8 @@ pub fn function_call(pair: Pair<Rule>, closure: &mut Closure, slash: &Slash) -> 
     }
 
     match function {
-        "print" => { print(args, slash) }
+        "print" => { print(args, slash); }
+        "println" => { print(args, slash); slash.write_stdout("\n"); }
         "len" => { return len(args, spans); }
         "to_str" => { return to_str(args, spans); }
         "parse_float" => { return parse_float(args, spans); }

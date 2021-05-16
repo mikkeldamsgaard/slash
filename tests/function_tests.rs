@@ -8,4 +8,12 @@ fn test_fun() {
     }
     f("s")
     "##,"pass");
+
+    common::run(r##"
+    function f(x) {
+        return "pas"+x
+    }
+    println("1")
+    println(f("s"))
+    "##,"1\npass\n");
 }

@@ -212,6 +212,8 @@ Prints to standard out
 print(1,2,"abc") # prints 1 2 abc
 ```
 prints arguments seperated with a space
+####println
+Identical to print, but add a newline
 ####len
 Returns the length of a string, list or the number of keys in a table
 ####to_str
