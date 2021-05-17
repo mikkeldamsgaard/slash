@@ -1,37 +1,33 @@
-## Welcome to GitHub Pages
+## Welcome to Slash
 
-You can use the [editor on GitHub](https://github.com/mikkeldamsgaard/slash/edit/gh-pages/index.md) to maintain and preview the content for your website in Markdown files.
+Slash is a shell scripting language intended to substitute (b)ash scripting
+to accomplish these goals
 
-Whenever you commit to this repository, GitHub Pages will run [Jekyll](https://jekyllrb.com/) to rebuild the pages in your site, from the content in your Markdown files.
+- Easy learning curve
+- Modern language
+- Familiar curly-bracket syntax
+- Powerful process abstractions as first order citizens
 
-### Markdown
+In summary the language aims to be a hybrid of standard modern curly bracket 
+languages and the traditional shell scripting languages with pipes and redirects
 
-Markdown is a lightweight and easy-to-use syntax for styling your writing. It includes conventions for
+### Intended use
 
-```markdown
-Syntax highlighted code block
+Slash is intended to be used where a traditional shell script could be used.
+In particular, the language is not intended as a higher order application language
+but more a glue kind of language, where a quick automated script would 
+do the job.
 
-# Header 1
-## Header 2
-### Header 3
+Here is an example of a slash script
+```javascript
+#!/bin/slash
 
-- Bulleted
-- List
+ls $> dir_listing
 
-1. Numbered
-2. List
-
-**Bold** and _Italic_ and `Code` text
-
-[Link](url) and ![Image](src)
+for f in split(stdout(dir_listing),"\n") {
+  if f == "slash_is_awesome.txt" {
+    println("Slash is truly awesome")
+  }
+}
 ```
 
-For more details see [GitHub Flavored Markdown](https://guides.github.com/features/mastering-markdown/).
-
-### Jekyll Themes
-
-Your Pages site will use the layout and styles from the Jekyll theme you have selected in your [repository settings](https://github.com/mikkeldamsgaard/slash/settings/pages). The name of this theme is saved in the Jekyll `_config.yml` configuration file.
-
-### Support or Contact
-
-Having trouble with Pages? Check out our [documentation](https://docs.github.com/categories/github-pages-basics/) or [contact support](https://support.github.com/contact) and we’ll help you sort it out.
