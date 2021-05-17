@@ -77,7 +77,9 @@ pub fn evaluate(expression: Pair<Rule>, closure: &mut Closure, slash: &Slash) ->
                     FunctionCallResult::Value(value) => Ok(value)
                 }
             }
-            _ => unreachable!("{:?}",pair.as_rule()),
+            _ => {
+                unreachable!("{:?}\n{}",pair.as_rule(), SlashError::new(&pair.as_span(), "Unreachable"));
+            },
         },
         |lhs: Result<Value, SlashError>, op: Pair<Rule>, rhs: Result<Value, SlashError> | {
             let s = op.as_span();

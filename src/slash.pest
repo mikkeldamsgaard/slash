@@ -1,7 +1,7 @@
 WHITESPACE = _{  " " | "\t" | ("\\" ~ NEWLINE) }
 COMMENT = _{ "#" ~ (!(NEWLINE | EOI) ~ ANY)* ~ (NEWLINE | &EOI) }
 
-word_char = _{ !(WHITESPACE | NEWLINE | "\"" | "|" | ">" | " " | ";" | "(" | ")" | "<" | "," | "{" | "}") ~ ANY }
+word_char = _{ !(WHITESPACE | NEWLINE | "\"" | "|" | ">" | " " | ";" | "(" | ")" | "<" | "," | "{" | "}" | "$" ) ~ ANY }
 word = @{ word_char+ }
 
 file = { SOI ~ (block | statement | NEWLINE | ";")* ~ EOI }

@@ -93,10 +93,10 @@ impl Value {
 
     pub fn convert_parsed_string(parsed: &str) -> String {
         let expanded = String::from(parsed
+            .replace("\\n", "\n")
             .replace("\\\"", "\"")
-            .replace("\\\n", "\n")
-            .replace("\\\t", "\t")
-            .replace("\\\r", "\r")
+            .replace("\\t", "\t")
+            .replace("\\r", "\r")
         );
         String::from(&expanded[1..(expanded.len() - 1)])
     }
@@ -104,9 +104,9 @@ impl Value {
     fn escape_string(str: &str) -> String {
         String::from(str
             .replace("\"", "\\\"")
-            .replace("\n", "\\\n")
-            .replace("\t", "\\\t")
-            .replace("\r", "\\\r")
+            .replace("\n", "\\n")
+            .replace("\t", "\\t")
+            .replace("\r", "\\r")
         )
     }
 
