@@ -15,7 +15,7 @@ fn main() {
         src = fs::read_to_string(&args[1]).expect(&format!("Failed to read file {}", &args[1]));
         cur_dir = Path::new(&args[1]).parent().expect("Failed to determine dir of input file").to_path_buf();
     } else {
-        panic!("Could not parse command line args");
+        panic!("Could not parse command line args: {:?}",&args);
     }
 
     let res = slash::Slash::new(&src,

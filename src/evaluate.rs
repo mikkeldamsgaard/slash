@@ -8,6 +8,7 @@ use std::collections::HashMap;
 use std::rc::Rc;
 use crate::error::SlashError;
 use std::cell::RefCell;
+use std::env;
 
 lazy_static! {
     static ref PREC_CLIMBER: PrecClimber<Rule> = {
@@ -28,6 +29,7 @@ lazy_static! {
 }
 
 pub fn evaluate(expression: Pair<Rule>, closure: &mut Closure, slash: &Slash) -> Result<Value, SlashError> {
+
     //dbg!(&expression);
     PREC_CLIMBER.climb(
         expression.into_inner(),
@@ -70,6 +72,9 @@ pub fn evaluate(expression: Pair<Rule>, closure: &mut Closure, slash: &Slash) ->
             },
             Rule::expression => evaluate(pair, closure, slash),
             Rule::var_name => Ok(closure.lookup(pair.as_str())),
+            Rule::env_var => {
+                evaluate_env_var(closure, pair)
+            }
             Rule::function_call => {
                 let span = pair.as_span();
                 match function::function_call(pair, closure, slash)? {
@@ -100,4 +105,17 @@ pub fn evaluate(expression: Pair<Rule>, closure: &mut Closure, slash: &Slash) ->
             }
         },
     )
+}
+
+pub fn evaluate_env_var(closure: &mut Closure, pair: Pair<Rule>) -> Result<Value, SlashError> {
+    let var_pair = pair.into_inner().next().unwrap();
+    let var_name = var_pair.as_str();
+    if closure.has_var(var_name) {
+        Ok(closure.lookup(var_name))
+    } else {
+        match env::var(var_name) {
+            Ok(s) => Ok(Value::String(s)),
+            Err(_) => Err(SlashError::new(&var_pair.as_span(), &format!("Environment variable {} not defined", var_name)))
+        }
+    }
 }

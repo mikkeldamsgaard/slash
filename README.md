@@ -216,6 +216,26 @@ echo $outputfile > outputfile # Using variables in process spawning, requires a 
 echo $(1+3) > outputfile # Works with expressions in $() constructs
 ls -al # No redirect, so prints on stdout 
 ```
+#### Environment variables
+To access an environment variable, use $var_name
+```bash
+let j = $ENV_VAR1
+cat $ENV_VAR2 | wc > $ENV_VAR3
+```
+The $var_name logic, first looks up var_name as a local script variable, and if it is
+not present as a local script variable it tries to resolve it as an environment variable.
+This implies that environment variables can be overwritten locally.
+
+To set an environment variable use the export keyword
+
+```bash
+let j = "some value"
+export j
+export p = "another value"
+some_program_that_uses_j_and_or_p
+```
+
+In the shorthand notation above for p, p is also set a local script variable
 
 ## Builtin functions
 ### print

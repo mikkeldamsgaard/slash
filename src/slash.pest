@@ -6,13 +6,13 @@ word = @{ word_char+ }
 
 file = { SOI ~ (block | statement | NEWLINE | ";")* ~ EOI }
 block = { "{" ~ (block | statement | NEWLINE | ";")* ~ "}" }
-statement = _{ var_declaration | function_declaration | var_assignment | indexed_var_assignment | function_call | for_in_statement | for_std_statement | if_statement | return_statement | break_statement | continue_statement | chain }
+statement = _{ var_declaration | function_declaration | var_assignment | indexed_var_assignment | export_statement | function_call | for_in_statement | for_std_statement | if_statement | return_statement | break_statement | continue_statement | chain }
 
 chain = { command ~ pipe* ~ redirection? ~ capture? }
 pipe = { "|" ~ command }
 redirection = { (">" | ">>") ~ command }
 capture = { "$>" ~ var_name }
-command = { (word | string_literal | "$" ~ var_name | "$(" ~ expression ~ ")") + }
+command = { (word | string_literal | env_var | "$(" ~ expression ~ ")") + }
 
 for_in_statement = {
     ( "for" ~ var_name ~ "in" ~ expression ~ block ) |
@@ -35,7 +35,9 @@ continue_statement = { "continue" }
 var_declaration = { "let" ~ var_name ~  "=" ~ expression  }
 var_assignment = { var_name ~ "=" ~ expression }
 indexed_var_assignment = { var_name ~ "[" ~ expression ~ "]" ~ "=" ~ expression }
+export_statement = { "export" ~ var_name ~ ("=" ~ expression)? }
 var_name = @{ (ASCII_ALPHA | "_")+ }
+
 
 expression = { term ~ ( operator ~ term | indexer ~ term ~ "]" )* }
 operator = _{ add | subtract | multiply| divide | power | equals | less_than | greater_than | not_equals | and | or }
@@ -53,7 +55,8 @@ operator = _{ add | subtract | multiply| divide | power | equals | less_than | g
 
 indexer = { "[" }
 
-term = _{ literal | function_call | var_name | "$" ~ var_name |  "(" ~ expression ~ ")"  }
+term = _{ literal | function_call | var_name | env_var |  "(" ~ expression ~ ")"  }
+env_var = { "$" ~ var_name }
 function_call = { var_name ~"(" ~ ( expression ~ ("," ~ expression)*)? ~ ")" }
 literal = { numeric_literal | string_literal | list_literal | map_literal }
 numeric_literal = @{ ASCII_DIGIT+ ~ ("." ~ ASCII_DIGIT+)? }

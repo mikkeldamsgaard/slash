@@ -14,7 +14,7 @@ use pest::iterators::Pair;
 use duct;
 use std::ffi::OsString;
 use crate::closure::{Closure};
-use crate::evaluate::evaluate;
+use crate::evaluate::{evaluate, evaluate_env_var};
 use std::io::Write;
 use crate::function::function_call;
 use crate::value::Value;
@@ -283,6 +283,20 @@ impl Slash<'_> {
             },
             Rule::break_statement => { return Ok(ExecuteResult::Break(pair.as_span())); },
             Rule::continue_statement => { return Ok(ExecuteResult::Continue(pair.as_span())); },
+            Rule::export_statement => {
+                let mut pairs = pair.into_inner();
+                let var_pair = pairs.next().unwrap();
+                let var_name = var_pair.as_str().trim();
+                if let Some(expr_pair) = pairs.next() {
+                    let value = evaluate(expr_pair, closure, self)?;
+                    closure.declare(var_name, value);
+                } else {
+                    if !closure.has_var(var_name) {
+                        return Err(SlashError::new(&var_pair.as_span(), &format!("Exported variable {} not defined.", var_name)));
+                    }
+                }
+                closure.add_export(var_name);
+            }
             Rule::EOI => {},
             _ => { unreachable!("Rule not handled {:?}",pair.as_rule()) }
         }
@@ -330,16 +344,23 @@ impl Slash<'_> {
             args.push(self.parse_prg_or_arg(r, closure)?);
         }
         let expr = duct::cmd(program, args.clone().iter().map(|i| Into::<OsString>::into(i)));
+        let expr = expr.full_env(closure.exports());
         Ok(expr)
     }
 
     fn parse_prg_or_arg(&self, term: Pair<Rule>, closure: &mut Closure) -> Result<String, SlashError> {
         match term.as_rule() {
             Rule::word => Ok(String::from(term.as_str())),
+            Rule::string_literal => Ok(Value::convert_parsed_string(term.as_str())),
             _ => {
                 let t_str = term.as_str();
                 let t_sp = term.as_span();
-                if let Value::String(str) = evaluate(term, closure, self)? {
+                let v = match term.as_rule() {
+                    Rule::env_var => evaluate_env_var(closure, term)?,
+                    Rule::expression => evaluate(term, closure, self)?,
+                    _ => unreachable!()
+                };
+                if let Value::String(str) = v {
                     Ok(str)
                 } else {
                     Err(SlashError::new(&t_sp,&format!("Term must evaluate to a string {}", t_str)))
