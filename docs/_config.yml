@@ -21,7 +21,7 @@
 title: The slash scripting language
 #email: krulimut@gmail.com
 description: >- # this means to ignore newlines until "baseurl:"
-  Slash scripting language aims to be a nofrills replacement for bash and other
+  The slash scripting language aims to be a nofrills replacement for bash and other
   shells scripting languages. The sole focus of slash is to modernize the shell
   scripting experience and be the goto language for every system automation script
 baseurl: "" # the subpath of your site, e.g. /blog
