@@ -305,6 +305,7 @@ impl Slash<'_> {
     }
 
     fn run_chain(&self, command: Pair<Rule>, pipes: Vec<Pair<Rule>>, redirect: Option<Pair<Rule>>, capture: Option<Pair<Rule>>, closure: &mut Closure) -> Result<(), SlashError>{
+        let command_span = command.as_span();
         let mut cmd = self.create_cmd(command, closure)?;
 
         for x in pipes {
@@ -319,7 +320,7 @@ impl Slash<'_> {
             cmd = cmd.stdout_file(std::fs::File::create(&out_file[..]).unwrap());
         }
 
-        let out = cmd.unchecked().run().unwrap();
+        let out = cmd.unchecked().run().or_else(|e|  {Err(SlashError::new(&command_span, &e.to_string()))})?;
 
         if let Some(pair) = capture {
             let var_name = pair.into_inner().next().unwrap().as_str();

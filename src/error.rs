@@ -36,6 +36,7 @@ impl<T> From<std::result::Result<T, SlashError>> for SlashError  {
         } else { panic!("Internal error");}
     }
 }
+
 // impl ToString for SlashError {
 //     fn to_string(&self) -> String {
 //         if self.parse { return self.err.to_owned() };
