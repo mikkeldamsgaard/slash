@@ -22,6 +22,7 @@ use std::rc::Rc;
 use crate::error::SlashError;
 use std::cell::RefCell;
 use std::path::Path;
+use std::env;
 
 #[derive(Debug, Clone)]
 pub enum ExecuteResult<'a> {
@@ -344,7 +345,15 @@ impl Slash<'_> {
             args.push(self.parse_prg_or_arg(r, closure)?);
         }
         let expr = duct::cmd(program, args.clone().iter().map(|i| Into::<OsString>::into(i)));
-        let expr = expr.full_env(closure.exports());
+        let mut full_env = closure.exports();
+        env::vars().for_each(|f| {
+            if !full_env.contains_key(&f.0) {
+                full_env.insert(f.0, f.1);
+            }
+        });
+
+        let expr = expr.full_env(full_env);
+
         Ok(expr)
     }
 
