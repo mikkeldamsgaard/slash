@@ -55,7 +55,8 @@ operator = _{ add | subtract | multiply| divide | power | equals | less_than | g
 
 indexer = { "[" }
 
-term = _{ literal | function_call | var_name | env_var |  "(" ~ expression ~ ")"  }
+term = _{ literal | function_call | var_name | env_var |  "(" ~ expression ~ ")" | not_expression }
+not_expression = { ("!" | "not") ~ expression }
 env_var = { "$" ~ var_name }
 function_call = { var_name ~"(" ~ ( expression ~ ("," ~ expression)*)? ~ ")" }
 literal = { numeric_literal | string_literal | list_literal | map_literal }

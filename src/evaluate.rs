@@ -71,6 +71,10 @@ pub fn evaluate(expression: Pair<Rule>, closure: &mut Closure, slash: &Slash) ->
 
             },
             Rule::expression => evaluate(pair, closure, slash),
+            Rule::not_expression => {
+                let expr = evaluate(pair.into_inner().next().unwrap(), closure, slash)?;
+                if expr.is_true() { Ok(Value::Number(0.0))} else { Ok(Value::Number(1.0))}
+            }
             Rule::var_name => Ok(closure.lookup(pair.as_str())),
             Rule::env_var => {
                 evaluate_env_var(closure, pair)

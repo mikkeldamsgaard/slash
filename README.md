@@ -155,6 +155,23 @@ so the rule is that these values will not chose the branch: (ie behave like fals
 
 Comparison operations and logic operators all return 0 or 1
 
+The infix comparison operations are 
+- ||: or
+- &&: and
+- ==: equals
+- <: less than
+- \>: greater than
+- !=: not equal
+  
+There is negation operation, ! or not:
+```javascript
+if ! i==0 || not i == 0 { # "!" and "not" are synonyms 
+  print("First branch")
+} 
+```
+
+- ! or not: negation
+
 ```javascript
 print(1<3) # 1
 print(3<1) # 0
