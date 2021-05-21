@@ -9,6 +9,7 @@ use std::rc::Rc;
 use crate::error::SlashError;
 use std::cell::RefCell;
 use std::env;
+use pest::Span;
 
 lazy_static! {
     static ref PREC_CLIMBER: PrecClimber<Rule> = {
@@ -114,12 +115,17 @@ pub fn evaluate(expression: Pair<Rule>, closure: &mut Closure, slash: &Slash) ->
 pub fn evaluate_env_var(closure: &mut Closure, pair: Pair<Rule>) -> Result<Value, SlashError> {
     let var_pair = pair.into_inner().next().unwrap();
     let var_name = var_pair.as_str();
+    let span = &var_pair.as_span();
+    lookup_variable_or_environment(var_name, closure, span)
+}
+
+pub fn lookup_variable_or_environment(var_name: &str, closure: &mut Closure, span: &Span) -> Result<Value, SlashError> {
     if closure.has_var(var_name) {
         Ok(closure.lookup(var_name))
     } else {
         match env::var(var_name) {
             Ok(s) => Ok(Value::String(s)),
-            Err(_) => Err(SlashError::new(&var_pair.as_span(), &format!("Environment variable {} not defined", var_name)))
+            Err(_) => Err(SlashError::new(span, &format!("Environment variable {} not defined", var_name)))
         }
     }
 }

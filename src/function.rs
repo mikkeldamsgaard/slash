@@ -3,7 +3,7 @@
 use pest::iterators::Pair;
 use crate::value::Value;
 use crate::{Rule, Slash, ExecuteResult};
-use crate::evaluate::evaluate;
+use crate::evaluate::{evaluate, lookup_variable_or_environment};
 use crate::closure::Closure;
 use crate::function::FunctionCallResult::NoValue;
 use crate::pest::Parser;
@@ -55,6 +55,9 @@ pub fn function_call(pair: Pair<Rule>, closure: &mut Closure, slash: &Slash) -> 
         "split" => { return split(args,spans); }
         "starts_with" => { return starts_with(args,spans); }
         "join" => { return join(args,spans); }
+        "path_of_script" => { return path_of_script(args,spans,slash); }
+        "args" => { return script_args(args,spans,slash); }
+        "lookup_env_var" => { return lookup_env_var(args,spans,closure,slash); }
 
         _ => {
             if !closure.has_var(function) {
@@ -225,7 +228,7 @@ fn include(args: Vec<Value>, spans: Vec<Span>, closure: &mut Closure, slash: &Sl
         Value::String(file) => {
             let mut file = String::from(file);
             if !file.starts_with("/") {
-                let cd = slash.cur_dir.to_str().ok_or::<Result<&OsStr,SlashError>>(Err(SlashError::new(&spans[0], &format!("Could not retrieve current dir during include"))))?;
+                let cd = slash.include_dir.to_str().ok_or::<Result<&OsStr,SlashError>>(Err(SlashError::new(&spans[0], &format!("Could not retrieve current dir during include"))))?;
                 //let cd = dbg!(cd).to_str().ok_or::<Result<&str,SlashError>>(Err(SlashError::new(&spans[0], &format!("Could not retrieve current dir during include"))))?;
                 file = cd.to_owned() + "/" + &file;
             }
@@ -294,4 +297,24 @@ fn join(args: Vec<Value>, spans: Vec<Span>) -> Result<FunctionCallResult, SlashE
     }
 
     Ok(FunctionCallResult::Value(Value::String(s_vec.join(&c))))
+}
+
+fn path_of_script(args: Vec<Value>, spans: Vec<Span>, slash: &Slash) -> Result<FunctionCallResult, SlashError> {
+    verify_formal_args(&args, &spans, 0)?;
+    let include_dir = slash.include_dir.to_str().ok_or::<Result<&OsStr,SlashError>>(Err(SlashError::new(&spans[0], &format!("Could not retrieve current dir during include"))))?;
+    Ok(FunctionCallResult::Value(Value::String(String::from(include_dir))))
+}
+
+fn script_args(args: Vec<Value>, spans: Vec<Span>, slash: &Slash) -> Result<FunctionCallResult, SlashError> {
+    verify_formal_args(&args, &spans, 0)?;
+    Ok(FunctionCallResult::Value(Value::List(Rc::new(RefCell::new(slash.args.iter().map(|s| Value::String(s.clone())).collect())))))
+}
+
+fn lookup_env_var(args: Vec<Value>, spans: Vec<Span>, closure: &mut Closure, slash: &Slash) -> Result<FunctionCallResult, SlashError> {
+    verify_formal_args(&args, &spans, 1)?;
+
+    let var_name = get_string(&args[1], &span[2])?;
+
+    let val= lookup_variable_or_environment(&var_name, closure, &span[2])?;
+    Ok(FunctionCallResult::Value(val))
 }

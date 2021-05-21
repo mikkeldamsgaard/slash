@@ -46,13 +46,15 @@ pub struct Slash<'a> {
     source: &'a str,
     stdout: Box<RefCell<dyn Write>>,
     stderr: Box<RefCell<dyn Write>>,
-    cur_dir: &'a Path,
+    include_dir: &'a Path,
+    args: Rc<Vec<String>>
 }
 
 impl Slash<'_> {
     pub fn new<'a>(source: &'a str, stdout: Box<RefCell<dyn Write>>,
-                   stderr: Box<RefCell<dyn Write>>, cur_dir: &'a Path) -> Slash<'a> {
-        Slash { source, stdout, stderr, cur_dir }
+                   stderr: Box<RefCell<dyn Write>>, include_dir: &'a Path,
+                   args: Vec<String>) -> Slash<'a> {
+        Slash { source, stdout, stderr, include_dir, args: Rc::new(args) }
     }
 
     pub fn run(&self) -> Result<(), SlashError> {

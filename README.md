@@ -326,3 +326,23 @@ Checks if a string starts with another string
 ```javascript
 start_with("42123","42") # 1
 ```
+
+### path_of_script
+Zero argument function that returns the path of the current executing script. It returns the current working directory when 
+input is received on stdin.
+
+### args
+Zero argument function that returns the arguments to the script as a list. This function returns a copy of the formal 
+arguments to the script. The first element is the script itself.
+
+When being run with stdin as source, the list will be empty.
+
+### lookup_env_var
+Looks up an environment variable.
+```javascript
+lookup_env_var("PATH") # returns the value of the environment variable PATH (corresponds to $PATH)
+```
+
+The function is similar to the `$VAR` notation but allows for dynamic variable lookup, as in
+`lookup_env_var("VA"+"R")`
+
