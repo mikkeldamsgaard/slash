@@ -16,7 +16,7 @@ pub enum Value {
 }
 
 impl Value {
-    pub fn add(self, rhs: Self, span: Span) -> Result<Value, SlashError> {
+    pub fn add(self, rhs: &Self, span: &Span) -> Result<Value, SlashError> {
         use Value::*;
         match self {
             Number(lhs_val) => {
@@ -35,7 +35,7 @@ impl Value {
         }
     }
 
-    pub fn sub(self, rhs: Self, span: Span) -> Result<Value, SlashError> {
+    pub fn sub(self, rhs: &Self, span: &Span) -> Result<Value, SlashError> {
         use Value::*;
         match self {
             Number(lhs_val) => {
@@ -48,7 +48,7 @@ impl Value {
         }
     }
 
-    pub fn mul(self, rhs: Value, span: Span) -> Result<Value, SlashError> {
+    pub fn mul(self, rhs: &Value, span: &Span) -> Result<Value, SlashError> {
         use Value::*;
         match self {
             Number(lhs_val) => {
@@ -61,7 +61,7 @@ impl Value {
         }
     }
 
-    pub fn div(self, rhs: Value, span: Span) -> Result<Value, SlashError> {
+    pub fn div(self, rhs: &Value, span: &Span) -> Result<Value, SlashError> {
         use Value::*;
         match self {
             Number(lhs_val) => {
@@ -74,12 +74,12 @@ impl Value {
         }
     }
 
-    pub fn powf(&self, rhs: Value, span: Span) -> Result<Value, SlashError> {
+    pub fn powf(&self, rhs: &Value, span: &Span) -> Result<Value, SlashError> {
         use Value::*;
         match self {
             Number(lhs_val) => {
                 match rhs {
-                    Number(rhs_val) => Ok(Number(lhs_val.powf(rhs_val))),
+                    Number(rhs_val) => Ok(Number(lhs_val.powf(*rhs_val))),
                     _ => Err(SlashError::new(&span, "Power left hand side is number, expected number on right hand side"))
                 }
             }
@@ -122,15 +122,15 @@ impl Value {
     }
 
 
-    pub fn or(&self, rhs: Value) -> Value {
+    pub fn or(&self, rhs: &Value) -> Value {
         return bool_to_value(self.is_true() || rhs.is_true());
     }
 
-    pub fn and(&self, rhs: Value) -> Value {
+    pub fn and(&self, rhs: &Value) -> Value {
         return bool_to_value(self.is_true() && rhs.is_true());
     }
 
-    fn _equals(&self, rhs: &Value, span: &Span) -> Result<bool, SlashError> {
+    pub fn _equals(&self, rhs: &Value, span: &Span) -> Result<bool, SlashError> {
         use Value::*;
         match self {
             Number(lhs_val) => {
@@ -174,15 +174,15 @@ impl Value {
         }
     }
 
-    fn type_mismatch_error(&self, rhs: &&Value, span: &Span) -> Result<bool, SlashError> {
+    fn type_mismatch_error(&self, rhs: &Value, span: &Span) -> Result<bool, SlashError> {
         Err(SlashError::new(&span, &format!("Type mismatch in comparison. Cannot compare {} to {}", self.value_type(), rhs.value_type())))
     }
 
-    pub fn equals(&self, rhs: Value, span: Span) -> Result<Value, SlashError> {
+    pub fn equals(&self, rhs: &Value, span: &Span) -> Result<Value, SlashError> {
         Ok(bool_to_value(self._equals(&rhs, &span)?))
     }
 
-    pub fn not_equals(&self, rhs: Value, span: Span) -> Result<Value, SlashError> {
+    pub fn not_equals(&self, rhs: &Value, span: &Span) -> Result<Value, SlashError> {
         Ok(bool_to_value(!self._equals(&rhs, &span)?))
     }
 
@@ -212,12 +212,32 @@ impl Value {
     }
 
 
-    pub fn less_than(&self, rhs: Value, span: Span) -> Result<Value, SlashError> {
+    pub fn less_than(&self, rhs: &Value, span: &Span) -> Result<Value, SlashError> {
         Ok(bool_to_value(self._less_than(&rhs, &span)?))
     }
 
-    pub fn greater_than(&self, rhs: Self, span: Span) -> Result<Value, SlashError> {
-        Ok(bool_to_value(!self._less_than(&rhs, &span)? && !self._equals(&rhs, &span)?))
+    pub fn greater_than(&self, rhs: &Self, span: &Span) -> Result<Value, SlashError> {
+        Ok(bool_to_value(self._greater_than(rhs,span)?))
+    }
+
+    pub fn _greater_than(&self, rhs: &Self, span: &Span) -> Result<bool, SlashError> {
+        Ok(!self._less_than(&rhs, &span)? && !self._equals(&rhs, &span)?)
+    }
+
+    pub fn less_than_or_equals(&self, rhs: &Self, span: &Span) -> Result<Value, SlashError> {
+        Ok(bool_to_value(self._less_than_or_equals(rhs,span)?))
+    }
+
+    pub fn _less_than_or_equals(&self, rhs: &Self, span: &Span) -> Result<bool, SlashError> {
+        Ok(!self._greater_than(rhs,span)?)
+    }
+
+    pub fn greater_than_or_equals(&self, rhs: &Self, span: &Span) -> Result<Value, SlashError> {
+        Ok(bool_to_value(self._greater_than_or_equals(rhs,&span)?))
+    }
+
+    pub fn _greater_than_or_equals(&self, rhs: &Self, span: &Span) -> Result<bool, SlashError> {
+        Ok(!self._less_than(rhs,&span)?)
     }
 
     pub fn value_type(&self) -> &str {
@@ -260,13 +280,13 @@ impl Value {
     }
 
 
-    pub fn lookup_by_index(&self, index: Value, span: Span) -> Result<Value, SlashError> {
+    pub fn lookup_by_index(&self, index: &Value, span: &Span) -> Result<Value, SlashError> {
         match self {
             Value::List(l) => {
                 let i_index;
                 if let Value::Number(raw) = index {
-                    if 0.0 <= raw && raw < l.borrow().len() as f64 {
-                        i_index = usize::from(raw as u16);
+                    if 0.0 <= *raw && *raw < l.borrow().len() as f64 {
+                        i_index = usize::from(*raw as u16);
                         Ok(l.borrow()[i_index].clone())
                     } else {
                         Err(SlashError::new(&span, &format!("Index out of bounds. Value length is {} index was {}", l.borrow().len(), raw)))
@@ -277,7 +297,7 @@ impl Value {
             }
             Value::Table(t) => {
                 if let Value::String(s) = index {
-                    if let Some(val) = t.borrow().get(&s) {
+                    if let Some(val) = t.borrow().get(s) {
                         Ok(val.clone())
                     } else {
                         Err(SlashError::new(&span, &format!("Entry {} not found in table",&s)))

@@ -61,4 +61,64 @@ fn test_if() {
       print("pass")
     }"##,"pass");
 
+    common::run(r##"
+    if (
+    1+
+
+
+    2 ==
+
+    3) {
+      print("pass")
+    } "##,"pass");
+
+}
+
+#[test]
+fn test_match() {
+    common::run(r##"
+    match 1 {
+      1 => {
+      print("pass")
+      }
+    }"##,"pass");
+
+    common::run(r##"
+    match 1 {
+      1 -> 3 => {
+      print("pass")
+      }
+    }"##,"pass");
+    common::run(r##"
+    match 2 {
+      1 -> 5 => {
+      print("pass")
+      }
+    }"##,"pass");
+    common::run(r##"
+    match 5 {
+      1 -> 5 => {
+      print("pass")
+      }
+    }"##,"pass");
+    common::run(r##"
+    match 7 {
+      1 -> 5 => {
+      print("fail")
+      }
+      _ => { print("pass") }
+    }"##,"pass");
+    common::run(r##"
+    match 7 {
+      1 -> 5, 7 => {
+      print("pass")
+      }
+    }"##,"pass");
+    common::run(r##"
+    match -7 {
+      -20 -> -5, 7 => {
+      print("pass")
+      }
+    }"##,"pass");
+
 }

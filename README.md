@@ -35,13 +35,13 @@ j = j + 34
 
 There are the following value types
 
-**Number**
+### Number
 ```javascript
 3.0
 ```
 Numbers are 64 bit floating point
 
-**String**
+### String
 ```
 "a string\non a new line
 and a third line"
@@ -49,13 +49,13 @@ and a third line"
 A string is enclosed by "" and accepts the standard escape 
 characters. Newlines are allows in strings.
 
-**List**
+### List
 ```javascript
 [1,"abc",42.0, [0,42]]
 ```
 A list of values 
 
-**Table**
+### Table
 ```javascript
 { 
   f1: 42, 
@@ -65,7 +65,7 @@ A list of values
 ```
 A key to value table. Keys can optionally be quoted
 
-**Indexed assignment for Table and Lists**
+### Indexed assignment for Table and Lists
 
 It is possible to assign a new value to an entry in a list or a key in a table
 
@@ -80,7 +80,7 @@ j["f1"] = 42
 print(f) # { "f1": 42 }
 ```
 
-**ProcessResult**
+### ProcessResult
 
 A special value type that is used to store the result of the 
 execution of a child process
@@ -89,7 +89,7 @@ execution of a child process
 ## Control structure
 A standard set of control structures are available
 
-**for**
+### for
 
 A loop construct. It has two forms, a standard form adapted from 
 the traditional c-for and a for-in construct
@@ -129,7 +129,7 @@ print(j)
 ```
 For in works only on lists. break/continue works as expected
 
-**if**
+### if
 
 Standard if-then-else construct.
 ```javascript
@@ -176,8 +176,24 @@ if ! i==0 || not i == 0 { # "!" and "not" are synonyms
 print(1<3) # 1
 print(3<1) # 0
 ```
+### match
+Slash includes a matching operator that replaces the tradition switch/case
+```rust
+let value = 34
+match value {
+   34 => { println("It is 34") }
+   35 => { println("It is 35") }
+   36->40 => { println("It is between 36 and 40") }
+   41->50,77 => { println("It is between 41 and 50 or it is 77") }
+   41->50,60->77 => { 
+      println("It is between 41 and 50 or it is between 60 and 77") 
+   }
+   _ => { println("_ matches everything, it is the catch all of matching")}
+}
+```
+Slash evaluates each condition in sequence and executes the first match only.
 
-##Expressions
+## Expressions
 An expression is a calculation of a value. The following operators are defined +,-,*,/,^ on numbers. 
 + also works on strings and concatenates them.
 ```javascript
