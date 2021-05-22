@@ -31,6 +31,16 @@ impl Value {
                     _ => Err(SlashError::new(&span, "Add left hand side is string, expected string on right hand side"))
                 }
             }
+            List(lhs_val) => {
+                match rhs {
+                    List(rhs_val) => {
+                        let mut res : Vec<Value> = lhs_val.borrow().clone();
+                        res.append(&mut rhs_val.borrow_mut());
+                        Ok(List(Rc::new(RefCell::new(res.to_vec()))))
+                    },
+                    _ => Err(SlashError::new(&span, "Add left hand side is List, expected List on right hand side"))
+                }
+            }
             _ => Err(SlashError::new(&span, &format!("Add not defined on left hand argument value {}", self.value_type())))
         }
     }

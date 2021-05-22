@@ -1,0 +1,5 @@
+main:
+  - title: "Quick-Start Guide"
+    url: /index
+  - title: "About"
+    url: /about

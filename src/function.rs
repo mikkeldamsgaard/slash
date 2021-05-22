@@ -57,7 +57,7 @@ pub fn function_call(pair: Pair<Rule>, closure: &mut Closure, slash: &Slash) -> 
         "join" => { return join(args,spans); }
         "path_of_script" => { return path_of_script(args,spans,slash); }
         "args" => { return script_args(args,spans,slash); }
-        "lookup_env_var" => { return lookup_env_var(args,spans,closure,slash); }
+        "lookup_env_var" => { return lookup_env_var(args,spans,closure); }
 
         _ => {
             if !closure.has_var(function) {
@@ -310,11 +310,11 @@ fn script_args(args: Vec<Value>, spans: Vec<Span>, slash: &Slash) -> Result<Func
     Ok(FunctionCallResult::Value(Value::List(Rc::new(RefCell::new(slash.args.iter().map(|s| Value::String(s.clone())).collect())))))
 }
 
-fn lookup_env_var(args: Vec<Value>, spans: Vec<Span>, closure: &mut Closure, slash: &Slash) -> Result<FunctionCallResult, SlashError> {
+fn lookup_env_var(args: Vec<Value>, spans: Vec<Span>, closure: &mut Closure) -> Result<FunctionCallResult, SlashError> {
     verify_formal_args(&args, &spans, 1)?;
 
-    let var_name = get_string(&args[1], &span[2])?;
+    let var_name = get_string(&args[0], &spans[1])?;
 
-    let val= lookup_variable_or_environment(&var_name, closure, &span[2])?;
+    let val= lookup_variable_or_environment(&var_name, closure, &spans[1])?;
     Ok(FunctionCallResult::Value(val))
 }

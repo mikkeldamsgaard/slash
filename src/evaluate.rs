@@ -59,7 +59,7 @@ pub fn evaluate(expression: Pair<Rule>, closure: &mut Closure, slash: &Slash) ->
                                     Rule::string_literal => {
                                         res.insert(Value::convert_parsed_string(pair.as_str()), evaluate(pairs.next().unwrap(),closure,slash)?);
                                     },
-                                    _ => unreachable!()
+                                    _ => unreachable!("{:?}", pair.as_rule())
                                 }
                             } else {
                                 break;

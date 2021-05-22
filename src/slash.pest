@@ -42,7 +42,7 @@ var_declaration = { "let" ~ var_name ~  "=" ~ expression  }
 var_assignment = { var_name ~ "=" ~ expression }
 indexed_var_assignment = { var_name ~ "[" ~ expression ~ "]" ~ "=" ~ expression }
 export_statement = { "export" ~ var_name ~ ("=" ~ expression)? }
-var_name = @{ (ASCII_ALPHA | "_")+ }
+var_name = @{ (ASCII_ALPHA | "_") ~ (ASCII_ALPHA | "_" | ASCII_DIGIT)* }
 
 expression = { term ~ ( operator ~ term | indexer ~ expression ~ "]" )* }
 operator = _{ add | subtract | multiply| divide | power | equals | less_than | greater_than | not_equals | and | or }
@@ -68,6 +68,6 @@ literal = { numeric_literal | string_literal | list_literal | map_literal }
 numeric_literal = @{ "-"? ~ ASCII_DIGIT+ ~ ("." ~ ASCII_DIGIT+)? }
 string_literal = @{ "\"" ~ NEWLINE? ~ string_content ~ "\"" }
 list_literal = { "[" ~ ( expression ~ ( "," ~ expression )* )? ~ ","? ~ "]" }
-map_literal = { "{" ~ ( map_field ~ ( "," ~ map_field )* )? ~ ","? ~ "}" }
-map_field = { ( string_literal | var_name ) ~ ":" ~ expression }
+map_literal = { "{" ~ ( map_field ~ ( "," ~ map_field )* )? ~  "}" }
+map_field = _{ ( string_literal | var_name ) ~ ":" ~ expression }
 string_content = { ( "\\\"" | !"\"" ~ ANY )* }

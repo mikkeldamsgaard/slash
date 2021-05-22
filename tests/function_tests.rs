@@ -40,4 +40,29 @@ fn test_fun() {
     print(p)
     "##,"pass");
 
+    common::run(r##"
+
+    let x = "pass"
+
+    if lookup_env_var("x") != "pass" {
+        print("fail")
+    }
+
+    export x
+
+    if lookup_env_var("x") != "pass" {
+        print("fail")
+    }
+
+    print("pass")
+    "##,"pass");
+
+    common::run(r##"
+    function add(x,y)
+    {
+        return x+y
+    }
+
+    print(add(1,2)) # 3
+    "##,"3");
 }

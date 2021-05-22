@@ -40,4 +40,32 @@ fn test_index_eval() {
     print(f()[0])
     "##, "pass");
 
+
+}
+
+#[test]
+fn test_table_literal() {
+    common::run(r##"
+    let j = { f1 : "pass"}
+    print(j["f1"])
+    "##, "pass");
+
+    common::run(r##"
+    let j = { "f1" : "pass"}
+    print(j["f1"])
+    "##, "pass");
+
+    common::run(r##"
+    let j = { f1 : "pass",
+    "f2": "fail"}
+    print(j["f1"])
+    "##, "pass");
+
+}
+
+#[test]
+fn test_list() {
+    common::run(r##"
+    print(join(["p","a"] + ["ss"], ""))
+    "##, "pass");
 }
