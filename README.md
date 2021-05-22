@@ -22,6 +22,15 @@ the intention is to rely on the standard unix toolbox. Slash also
 works on Windows, but the primitives in windows are not as string as
 in unix.
 
+## Build and install
+Build instuctions:
+  * install [rust](https://www.rust-lang.org/tools/install)
+  * clone it locally ``git clone https://github.com/mikkeldamsgaard/slash.git`
+  * cd slash 
+  * Run cargo: ``cargo build --release``
+  * Optionally, install it: ``sudo cp target/release/slash /usr/local/bin/`` or 
+    maybe more dynamically, just link it for easy updates: ``sudo ln -s target/release/slash /usr/local/bin/``
+
 ## Variables and values
 Variable are all declared and have to assume a value.
 ```javascript
