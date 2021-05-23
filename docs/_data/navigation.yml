@@ -1,5 +1,25 @@
 main:
-  - title: "Quick-Start Guide"
-    url: /index
+  - title: "Documentation"
+    url: /book/intro
+  - title: "Installation"
+    url: /installation
   - title: "About"
     url: /about
+
+book:
+  - title: "Introduction"
+    url: /book/intro
+  - title: "Notation"
+    url: /book/notation
+  - title: "Types"
+    url: /book/types
+  - title: "Statements and expressions"
+    url: /book/statements_and_expressions
+    children:
+      - title: "Expressions"
+        url: /book/expressions
+      - title: "Statements"
+        url: /book/statements
+  - title: "Built-in functions"
+    url: /book/builtins
+

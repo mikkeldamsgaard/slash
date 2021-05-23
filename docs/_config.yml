@@ -27,12 +27,34 @@ description: >- # this means to ignore newlines until "baseurl:"
 baseurl: "" # the subpath of your site, e.g. /blog
 url: "https://slashlang.org" # the base hostname & protocol for your site, e.g. http://example.com
 #github_username:  mikkeldamsgaard
+repository               : "mikkeldamsgaard/slash"
+words_per_minute         : 200
+name                     : &name "Mikkel Damsgaard" # &name is a YAML anchor which can be *referenced later
 
 # Build settings
 remote_theme: "mmistakes/minimal-mistakes@4.23.0"
 plugins:
+    - jekyll-include-cache
+    - jekyll-paginate
+    - jekyll-sitemap
+    - jekyll-gist
+    - jemoji
+    - jekyll-feed
+
+# mimic GitHub Pages with --safe
+whitelist:
+  - jekyll-paginate
+  - jekyll-sitemap
+  - jekyll-gist
   - jekyll-feed
+  - jemoji
   - jekyll-include-cache
+
+author:
+  name             : *name # *name is a YAML reference pointing to the &anchor earlier
+  avatar           : "/assets/images/michael-rose.jpg"
+  bio              : "Just another *boring*, *tattooed*, *time traveling*, *designer*."
+  location         : "Buffalo, NY"
 
 # Exclude from processing.
 # The following items will not be processed, by default.
@@ -53,3 +75,36 @@ plugins:
 #   - vendor/cache/
 #   - vendor/gems/
 #   - vendor/ruby/
+
+footer:
+  links:
+    - label: "GitHub"
+      icon: "fab fa-fw fa-github"
+      url: "https://github.com/mikkeldamsgaard/slash"
+
+collections:
+  book:
+    output: true
+    permalink: /:collection/:path/
+
+defaults:
+  - scope:
+      path: "book"
+    values:
+      layout: single
+      read_time: false
+      author_profile: false
+      share: false
+      comments: false
+      sidebar:
+        nav: "book"
+
+# HTML Compression
+# - http://jch.penibelst.de/
+compress_html:
+  clippings: all
+  ignore:
+    envs: development
+
+encoding: "utf-8"
+markdown_ext: "markdown,mkdown,mkdn,mkd,md"

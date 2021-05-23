@@ -4,6 +4,7 @@ title: About
 permalink: /about/
 ---
 ## Slash shell scripting
+Slash is a shell scripting language intended to substitute (b)ash scripting
 
-For details, please visit
+The code is hosted on github: 
 [slash github](https://github.com/mikkeldamsgaard/slash)
