@@ -217,8 +217,14 @@ It is possible to index into Lists and Tables with []
 ```javascript
 let j = [1,2,3]
 print(j[2]) # 3
-j = { a: 41 }
+j = { "a": 41 }
 print(j["a"]+1) # 42
+```
+
+For tables it is also possible to index with an infix .
+```javascript
+let j = { "a": 41 }
+print(j.a+1) # 42
 ```
 
 ## Statements and blocks and scope

@@ -72,6 +72,12 @@ fn test_table_literal() {
     print(j.f1)
     "##, "pass");
 
+    common::run(r##"
+    let j = { "a": 41 }
+    print(j.a+1)
+    "##, "42");
+
+
 }
 
 #[test]
