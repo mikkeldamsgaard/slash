@@ -23,9 +23,9 @@ present in slash.
 Numbers in slash are 64 bit floating points. 
 Examples 
 ```javascript
-3.0
-1
--42.42
+let n1 = 3.0
+let n2 = 1
+let n3 = -42.42
 ```
 
 #### Number operations
@@ -38,7 +38,7 @@ Strings literals are escaped by "".
 
 Example
 ```
-"a string\non a new line
+let str = "a string\non a new line
 and a third line"
 ```
 
@@ -83,9 +83,9 @@ separated by a ``,``. Slash allows an optional tailing ``,``
 
 Examples
 ```javascript
-[1,"abc",42.0, [0,42]]
-[1,4,]
-[
+let list1 = [1,"abc",42.0, [0,42]]
+let list2 = [1,4,]
+let list3 = [
     "multi",
     "line",
     "list",
@@ -100,6 +100,11 @@ list[1] = list[0] + 12
 println(list[1])
 ```
 will output `` 22 ``
+
+The left-hand side of the assignment to a list
+index must have the syntactic form `` identifier[expr] `` 
+where ``identifier`` must resolve to a list value and 
+``expr`` must resolve to a number value
 
 #### List concatenation
 The `` + `` operator concatenates two lists
@@ -116,31 +121,92 @@ println(join(["10","20"],"x"))
 will output `` 10x20 ``
 
 ### Tables
-Slash tables is key-value associative arrays that associate a keys to values. 
+Slash tables is key-value associative arrays 
+that associate a keys to values. 
 Keys are always strings.
 
-Tables are input with curly brackets ``{}``, individual fields are 
-input with ``field : value `` and fields are separated by ``,``. 
-The field can be either a quoted string or a valid variable identifier.
-
+Tables are input with curly brackets ``{}``, 
+individual fields are input with ``field : value ``
+and fields are separated by ``,``. 
+The field key can be any expression 
+that evaluates to a string.
 Example
 ```javascript
-{ 
-  f1: 42, 
-  a_field: "abv",
+let table = { 
+  "f1": 42, 
+  "a_field": "abv",
   "quoted key": "key" 
 }
 ```
 
 #### Table indexing
-Slash tables are mutable and can be indexed with the ``[]`` operator as in this example
+Slash tables are mutable and can be indexed with the 
+``[]`` operator as in this example
 ```javascript
-let table = { a: 12, b: 14 }
+let table = { "a": 12, "b": 14 }
 table["a"] = table["b"] + 10
 println(table["a"])
 ```
 will output `` 22 ``
 
+An alternative to indexing tables with the ``[]`` 
+operator, is to use the ``.`` operator as in this example
+```javascript
+let table = { "a": 12, "b": 14 }
+table.a = table.b + 10
+println(table.a)
+```
+
+The left-hand side of the assignment to a table
+field must have the syntactic form `` identifier[expr] `` or `` identifier.identifier ``
+where the left most ``identifier`` must resolve to a table value and
+``expr`` must resolve to a string value. `` table_identifier.field_identifier `` 
+is identical to `` table_identifier["field_identifier"] ``
+
 ### Functions
 
+Function values represents a function that can be called. There are 
+two ways to construct functions in Slash, either using the function 
+keyword or using anonymous functions.
+
+The following two examples are identical
+```javascript
+function add(x,y) { return x+y }
+```
+
+```rust
+let add = |x,y| { return x+y }
+```
+
+The above example binds a function that adds its two arguments to 
+variable named add in the current closure.
+
 ### Process results
+
+A process result is the result of an external process. There is no 
+literal representation of process results.
+
+A process result value can be obtained by using the `` $> `` operator 
+on an external command; in the following example the variable proc_res will 
+hold a process result.
+```bash
+ls -l $> proc_res
+```
+
+#### Process Result stdout and stderr function
+To get the stdout and stderr of a process result use the 
+`` stdout `` and `` stderr `` functions 
+
+```bash
+ls -l $> proc_res
+println(stdout(proc_res))
+println(stderr(proc_red))
+```
+
+#### Process Result exit_code function
+To check the exit code of the process use the function `` exit_code ``
+
+```bash
+ls -l $> proc_res
+println(exit_code(proc_res))
+```

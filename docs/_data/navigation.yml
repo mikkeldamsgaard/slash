@@ -9,8 +9,8 @@ main:
 book:
   - title: "Introduction"
     url: /book/intro
-  - title: "Notation"
-    url: /book/notation
+  - title: "Slash program structure"
+    url: /book/structure
   - title: "Types"
     url: /book/types
   - title: "Statements and expressions"

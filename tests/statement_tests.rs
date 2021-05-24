@@ -122,3 +122,41 @@ fn test_match() {
     }"##,"pass");
 
 }
+
+#[test]
+fn test_index_assignment() {
+    common::run(r##"
+    let l = [1,2]
+    l[0] = "pass"
+    print(l[0])
+    "##,"pass");
+
+    common::run(r##"
+    let t = {"a":"fail", "b":"fail"}
+    t["c"] = "pass"
+    print(t["c"])
+    "##,"pass");
+
+    common::run(r##"
+    let t = {"a":"fail", "b":"fail"}
+    t.c = "pass"
+    print(t.c)
+    "##,"pass");
+
+}
+
+#[test]
+fn test_white_space() {
+    common::run(r##"
+    let
+    j
+    =
+    "pass"
+
+    print
+    (
+    j
+    )
+    "##,"pass");
+
+}

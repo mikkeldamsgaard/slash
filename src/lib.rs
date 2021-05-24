@@ -147,6 +147,23 @@ impl Slash<'_> {
                     return Err(SlashError::new(&var_pair.as_span(), &format!("Variable {} not defined.", var_name)));
                 }
             }
+            Rule::dot_var_assignment => {
+                let mut pairs = pair.into_inner();
+                let table_identifier = pairs.next().unwrap();
+                let field_identifier = pairs.next().unwrap();
+                let expression = pairs.next().unwrap();
+                if closure.has_var(table_identifier.as_str()) {
+                    let table_value = closure.lookup(table_identifier.as_str());
+                    if let Value::Table(table) = table_value {
+                        let value = evaluate_to_value(expression, closure, self)?;
+                        table.borrow_mut().insert(field_identifier.as_str().to_owned(), value);
+                    } else {
+                        return Err(SlashError::new(&table_identifier.as_span(), &format!("Variable {} is not a table.", table_identifier.as_str())));
+                    }
+                } else {
+                    return Err(SlashError::new(&table_identifier.as_span(), &format!("Variable {} not defined.", table_identifier.as_str())));
+                }
+            }
             Rule::chain => {
                 let mut pairs = pair.into_inner();
                 let command = pairs.next().unwrap();

@@ -6,7 +6,7 @@ word = @{ word_char+ }
 
 file = { SOI ~ (block | statement | ";")* ~ EOI }
 block = { "{" ~ (block | statement | ";")* ~ "}" }
-statement = _{ var_declaration | function_declaration | var_assignment | indexed_var_assignment | export_statement  | for_in_statement | for_std_statement | if_statement | return_statement | break_statement | continue_statement | match_statement | function_call_statement | chain }
+statement = _{ var_declaration | function_declaration | var_assignment | indexed_var_assignment | dot_var_assignment | export_statement  | for_in_statement | for_std_statement | if_statement | return_statement | break_statement | continue_statement | match_statement | function_call_statement | chain }
 
 chain = { command ~ pipe* ~ redirection? ~ capture? }
 pipe = { "|" ~ command }
@@ -43,6 +43,8 @@ match_expression = { expression ~ ( "->" ~ expression )? }
 var_declaration = { "let" ~ var_name ~  "=" ~ expression  }
 var_assignment = { var_name ~ "=" ~ expression }
 indexed_var_assignment = { var_name ~ "[" ~ expression ~ "]" ~ "=" ~ expression }
+dot_var_assignment = { var_name ~ "." ~ var_name ~ "=" ~ expression }
+
 export_statement = { "export" ~ var_name ~ ("=" ~ expression)? }
 var_name = @{ (ASCII_ALPHA | "_") ~ (ASCII_ALPHA | "_" | ASCII_DIGIT)* }
 
