@@ -66,6 +66,12 @@ fn test_table_literal() {
     print(j["f1"])
     "##, "pass");
 
+    common::run(r##"
+    let j = { "f1" : "pass",
+    "f2": "fail"}
+    print(j.f1)
+    "##, "pass");
+
 }
 
 #[test]

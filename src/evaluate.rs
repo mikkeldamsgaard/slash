@@ -13,6 +13,7 @@ use pest::Span;
 
 #[derive(Debug)]
 enum EvalResult<'a> {
+    Var(String, Span<'a>),
     Val(Value, Span<'a>),
     ArgList(Vec<(Value, Span<'a>)>),
     FieldMap(String, Value, Span<'a>),
@@ -34,6 +35,7 @@ lazy_static! {
             Operator::new(add, Left) | Operator::new(subtract, Left),
             Operator::new(multiply, Left) | Operator::new(divide, Left),
             Operator::new(power, Right),
+            Operator::new(infix_dot, Left),
             Operator::new(function_call_indicator, Left) | Operator::new(indexer, Left)
         ])
     };
@@ -45,6 +47,7 @@ pub fn evaluate_to_value(expression: Pair<Rule>, closure: &mut Closure, slash: &
     let res = do_climb(expression, closure, slash);
     match res? {
         Val(v, _) => Ok(v),
+        Var(var, _span) => Ok(closure.lookup(&var)),
         _ => Err(SlashError::new(&expression_span, &format!("Syntax error, expected an expression that evaluates to a value")))
     }
 }
@@ -55,6 +58,7 @@ pub fn evaluate_to_args<'a>(expression: Pair<'a, Rule>, closure: &mut Closure, s
     let res = do_climb(expression, closure, slash);
     match res? {
         Val(v, span) => Ok((vec!(v), vec!(span))),
+        Var(var, span) => Ok((vec!(closure.lookup(&var)), vec!(span))),
         ArgList(vals) => {
             let mut values = vec!();
             let mut spans = vec!();
@@ -88,6 +92,7 @@ fn do_climb<'a>(expression: Pair<'a, Rule>, closure: &mut Closure, slash: &Slash
                             Ok(Val(Value::List(Rc::new(RefCell::new(
                                 match do_climb(literal.into_inner().next().unwrap(), &mut cl.borrow_mut(), slash)? {
                                     Val(v, _) => vec!(v),
+                                    Var(var_name, _span) => vec!(cl.borrow().lookup(&var_name)),
                                     ArgList(l) => l.into_iter().map(|(v, _s)| v).collect(),
                                     _ => return Err(SlashError::new(&expression_span, &format!("Expected value or list of values")))
                                 }))), expression_span))
@@ -112,16 +117,16 @@ fn do_climb<'a>(expression: Pair<'a, Rule>, closure: &mut Closure, slash: &Slash
                     let expr = evaluate_to_value(pair.into_inner().next().unwrap(), &mut cl.borrow_mut(), slash)?;
                     Ok(Val(Value::Number(if expr.is_true() { 0.0 } else { 1.0 }), expression_span))
                 }
-                Rule::var_name => Ok(Val(cl.borrow_mut().lookup(pair.as_str()), expression_span)),
+                Rule::var_name => Ok(Var(pair.as_str().to_owned(), expression_span)),
                 Rule::env_var => Ok(Val(evaluate_env_var(&mut cl.borrow_mut(), pair)?, expression_span)),
                 Rule::empty_expression_list => Ok(ArgList(vec!())),
                 Rule::anonymous_function => {
                     let children: Vec<_> = pair.into_inner().collect();
                     Ok(Val(Value::Function(Function::User(
-                        Rc::new(children[0..children.len()-1].iter().map(|p| p.as_str().to_owned()).collect()),
-                        children[children.len()-1].as_str().to_owned(),
+                        Rc::new(children[0..children.len() - 1].iter().map(|p| p.as_str().to_owned()).collect()),
+                        children[children.len() - 1].as_str().to_owned(),
                         cl.borrow().clone())
-                    ),expression_span))
+                    ), expression_span))
                 }
                 _ => {
                     unreachable!("{:?}\n{}", pair.as_rule(), SlashError::new(&pair.as_span(), "Unreachable"));
@@ -146,10 +151,14 @@ fn do_climb<'a>(expression: Pair<'a, Rule>, closure: &mut Closure, slash: &Slash
                                 args.push(val);
                                 spans.push(span)
                             }
+                        },
+                        Var(var_name, span) => {
+                            args.push(cl.borrow().lookup(&var_name));
+                            spans.push(span)
                         }
                         _ => return Err(SlashError::new(&infix_expression_span, &format!("Expected value or list of values")))
                     }
-                    let lhs = v(lhs, &op_span)?;
+                    let lhs = v(lhs, &op_span, &cl.borrow())?;
                     match lhs.invoke(args, spans, &mut cl.borrow_mut(), slash)? {
                         FunctionCallResult::Value(v) => Ok(Val(v, infix_expression_span)),
                         FunctionCallResult::NoValue(_st) => Err(SlashError::new(&op_span, "Expected function to return a value"))
@@ -181,13 +190,33 @@ fn do_climb<'a>(expression: Pair<'a, Rule>, closure: &mut Closure, slash: &Slash
                     }
                 }
                 Rule::map_field_constructor => {
-                    let lhs = v(lhs, &op_span)?;
-                    let rhs = v(rhs, &op_span)?;
+                    let lhs = v(lhs, &op_span, &cl.borrow())?;
+                    let rhs = v(rhs, &op_span, &cl.borrow())?;
                     Ok(FieldMap(lhs.to_string().to_owned(), rhs, infix_expression_span))
                 }
+                Rule::infix_dot => {
+                    let lhs = v(lhs, &op_span, &cl.borrow())?;
+                    let rhs = rhs?;
+                    if let EvalResult::Var(var_name, var_span) = rhs {
+                        if let Value::Table(val) = lhs {
+                            if let Some(field) = val.borrow().get(&var_name) {
+                                return Ok(Val(field.clone(), infix_expression_span));
+                            }
+                        }
+
+                        if cl.borrow().has_var(&var_name) {
+                            // TODO: Partial resolved functions, ie len(str) === str.len()
+
+                        }
+
+                        Err(SlashError::new(&var_span, &format!("Identifier {} could not be resolved", &var_name)))
+                    } else {
+                        Err(SlashError::new(&op_span, "Right hand side of a . operator must be an identifier"))
+                    }
+                }
                 _ => {
-                    let lhs = v(lhs, &op_span);
-                    let rhs = v(rhs, &op_span);
+                    let lhs = v(lhs, &op_span, &cl.borrow());
+                    let rhs = v(rhs, &op_span, &cl.borrow());
                     match op.as_rule() {
                         Rule::add => Ok(Val(lhs?.add(&rhs?, &op_span)?, infix_expression_span)),
                         Rule::subtract => Ok(Val(lhs?.sub(&rhs?, &op_span)?, infix_expression_span)),
@@ -209,8 +238,9 @@ fn do_climb<'a>(expression: Pair<'a, Rule>, closure: &mut Closure, slash: &Slash
     )
 }
 
-fn v(r: Result<EvalResult, SlashError>, span: &Span) -> Result<Value, SlashError> {
+fn v(r: Result<EvalResult, SlashError>, span: &Span, closure: &Closure) -> Result<Value, SlashError> {
     match r? {
+        EvalResult::Var(var, _span) => Ok(closure.lookup(&var)),
         EvalResult::Val(value, _span) => Ok(value),
         _ => Err(SlashError::new(span, &format!("Syntax error, expected expression to evaluate to a value")))
     }

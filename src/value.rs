@@ -36,7 +36,7 @@ impl Value {
             List(lhs_val) => {
                 match rhs {
                     List(rhs_val) => {
-                        let mut res : Vec<Value> = lhs_val.borrow().clone();
+                        let mut res: Vec<Value> = lhs_val.borrow().clone();
                         res.append(&mut rhs_val.borrow_mut());
                         Ok(List(Rc::new(RefCell::new(res.to_vec()))))
                     },
@@ -229,7 +229,7 @@ impl Value {
     }
 
     pub fn greater_than(&self, rhs: &Self, span: &Span) -> Result<Value, SlashError> {
-        Ok(bool_to_value(self._greater_than(rhs,span)?))
+        Ok(bool_to_value(self._greater_than(rhs, span)?))
     }
 
     pub fn _greater_than(&self, rhs: &Self, span: &Span) -> Result<bool, SlashError> {
@@ -237,19 +237,19 @@ impl Value {
     }
 
     pub fn less_than_or_equals(&self, rhs: &Self, span: &Span) -> Result<Value, SlashError> {
-        Ok(bool_to_value(self._less_than_or_equals(rhs,span)?))
+        Ok(bool_to_value(self._less_than_or_equals(rhs, span)?))
     }
 
     pub fn _less_than_or_equals(&self, rhs: &Self, span: &Span) -> Result<bool, SlashError> {
-        Ok(!self._greater_than(rhs,span)?)
+        Ok(!self._greater_than(rhs, span)?)
     }
 
     pub fn greater_than_or_equals(&self, rhs: &Self, span: &Span) -> Result<Value, SlashError> {
-        Ok(bool_to_value(self._greater_than_or_equals(rhs,&span)?))
+        Ok(bool_to_value(self._greater_than_or_equals(rhs, &span)?))
     }
 
     pub fn _greater_than_or_equals(&self, rhs: &Self, span: &Span) -> Result<bool, SlashError> {
-        Ok(!self._less_than(rhs,&span)?)
+        Ok(!self._less_than(rhs, &span)?)
     }
 
     pub fn value_type(&self) -> &str {
@@ -304,7 +304,7 @@ impl Value {
                         Err(SlashError::new(&span, &format!("Index out of bounds. Value length is {} index was {}", l.borrow().len(), raw)))
                     }
                 } else {
-                    Err(SlashError::new(&span, &format!("Index value not a number, but a {}",index.value_type())))
+                    Err(SlashError::new(&span, &format!("Index value not a number, but a {}", index.value_type())))
                 }
             }
             Value::Table(t) => {
@@ -312,26 +312,25 @@ impl Value {
                     if let Some(val) = t.borrow().get(s) {
                         Ok(val.clone())
                     } else {
-                        Err(SlashError::new(&span, &format!("Entry {} not found in table",&s)))
+                        Err(SlashError::new(&span, &format!("Entry {} not found in table", &s)))
                     }
                 } else {
-                    Err(SlashError::new(&span, &format!("Index value not a string, but a {}",index.value_type())))
+                    Err(SlashError::new(&span, &format!("Index value not a string, but a {}", index.value_type())))
                 }
             }
-            _ => Err(SlashError::new(&span, &format!("Trying to index into non-indexable type {}, expected List or Table",self.value_type())))
+            _ => Err(SlashError::new(&span, &format!("Trying to index into non-indexable type {}, expected List or Table", self.value_type())))
         }
     }
 
     pub fn invoke(&self, args: Vec<Value>, spans: Vec<Span>, closure: &mut Closure, slash: &Slash) -> Result<FunctionCallResult, SlashError> {
         if let Value::Function(function) = self {
-            function.invoke("(expr)",args,spans,closure,slash)
+            function.invoke("(expr)", args, spans, closure, slash)
         } else {
             Err(SlashError::new(&spans[0], &format!("The left hand side does not evaluate to a function")))
         }
-
     }
-}
 
+}
 fn bool_to_value(val: bool) -> Value {
     Value::Number(if val { 1.0 } else { 0.0 })
 }
