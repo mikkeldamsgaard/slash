@@ -110,13 +110,13 @@ fn test_match() {
     }"##,"pass");
     common::run(r##"
     match 7 {
-      1 -> 5, 7 => {
+      1 -> 5; 7 => {
       print("pass")
       }
     }"##,"pass");
     common::run(r##"
     match -7 {
-      -20 -> -5, 7 => {
+      -20 -> -5; 7 => {
       print("pass")
       }
     }"##,"pass");

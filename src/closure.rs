@@ -65,6 +65,8 @@ impl Closure {
         if let Some(closure) = Closure::i_find_closure(data, var_name) {
             return closure.borrow().variables.get(var_name).unwrap().clone();
         } else {
+            // Check for built-in functions
+
             panic!("Variable {} not defined", var_name)
         }
     }

@@ -46,13 +46,13 @@ There are the following value types
 
 ### Number
 ```javascript
-3.0
+let num = 3.0
 ```
 Numbers are 64 bit floating point
 
 ### String
 ```
-"a string\non a new line
+let a_str = "a string\non a new line
 and a third line"
 ```
 A string is enclosed by "" and accepts the standard escape 
@@ -60,19 +60,21 @@ characters. Newlines are allows in strings.
 
 ### List
 ```javascript
-[1,"abc",42.0, [0,42]]
+let list = [1,"abc",42.0, [0,42]]
 ```
 A list of values 
 
 ### Table
 ```javascript
-{ 
+let f1 = "field1"
+
+let table = { 
   f1: 42, 
-  a_field: "abv",
+  "a_field": "abv",
   "quotedkey": "key" 
 }
 ```
-A key to value table. Keys can optionally be quoted
+A key to value table. Keys and values are expressions. Keys must evaluate to a string
 
 ### Indexed assignment for Table and Lists
 
@@ -193,8 +195,8 @@ match value {
    34 => { println("It is 34") }
    35 => { println("It is 35") }
    36->40 => { println("It is between 36 and 40") }
-   41->50,77 => { println("It is between 41 and 50 or it is 77") }
-   41->50,60->77 => { 
+   41->50; 77 => { println("It is between 41 and 50 or it is 77") }
+   41->50; 60->77 => { 
       println("It is between 41 and 50 or it is between 60 and 77") 
    }
    _ => { println("_ matches everything, it is the catch all of matching")}
@@ -241,7 +243,15 @@ function add(x,y)
 print(add(1,2)) # 3
 ```
 Tables and Lists are passed by reference, Numbers and Strings are passed by value. 
-(Note: Strings are really passed by reference internally, but they are immutable)  
+(Note: Strings are really passed by reference internally, but they are immutable)
+
+#### Anonymous functions
+Functions can also be the result of an expression evaluation.
+```rust
+let add = |x,y| { return x+y }
+print(add(1,2)) # 3
+```
+
 ### Comments
 Comments are started by a hash (#) and continues to the end 
 of the line

@@ -1,12 +1,12 @@
 WHITESPACE = _{  " " | "\t" | NEWLINE }
 COMMENT = _{ "#" ~ (!(NEWLINE | EOI) ~ ANY)* ~ (NEWLINE | &EOI) }
 
-word_char = _{ !(WHITESPACE | "\"" | "\\" | "|" | ">" | " " | ";" | "(" | ")" | "<" | "," | "{" | "}" | "$" ) ~ ANY }
+word_char = _{ !(WHITESPACE | "\"" | "\\" | "|" | ">" | " " | ";" | "(" | ")" | "<" | "," | "{" | "}" | "$" | "=" ) ~ ANY }
 word = @{ word_char+ }
 
 file = { SOI ~ (block | statement | ";")* ~ EOI }
 block = { "{" ~ (block | statement | ";")* ~ "}" }
-statement = _{ var_declaration | function_declaration | var_assignment | indexed_var_assignment | export_statement  | for_in_statement | for_std_statement | if_statement | return_statement | break_statement | continue_statement | match_statement | function_call | chain }
+statement = _{ var_declaration | function_declaration | var_assignment | indexed_var_assignment | export_statement  | for_in_statement | for_std_statement | if_statement | return_statement | break_statement | continue_statement | match_statement | function_call_statement | chain }
 
 chain = { command ~ pipe* ~ redirection? ~ capture? }
 pipe = { "|" ~ command }
@@ -28,14 +28,16 @@ for_std_statement = {
 
 if_statement = { "if" ~ expression ~ (statement | block) ~ ("else" ~ "if" ~ expression ~ (statement | block))* ~ ("else"  ~ (statement | block))? }
 
-function_declaration = { "function" ~ var_name ~ "(" ~ (var_name ~ ("," ~ var_name)*)? ~ ")" ~ block }
-
+function_declaration = { "function" ~ var_name ~ "(" ~ arg_list ~ ")" ~ block }
+arg_list = _{ (var_name ~ ("," ~ var_name)*)? }
 return_statement = { "return" ~ expression }
 break_statement = { "break" }
 continue_statement = { "continue" }
 
+function_call_statement = { function_identifier ~"(" ~  expression ~ ")" }
+function_identifier = { var_name }
 match_statement = { "match" ~ expression ~ "{" ~ match_term+ ~ "}" }
-match_term = { "_" ~ "=>" ~ block | match_expression ~ ( "," ~ match_expression )* ~ "=>" ~ block }
+match_term = { "_" ~ "=>" ~ block | match_expression ~ ( ";" ~ match_expression )* ~ "=>" ~ block }
 match_expression = { expression ~ ( "->" ~ expression )? }
 
 var_declaration = { "let" ~ var_name ~  "=" ~ expression  }
@@ -44,8 +46,8 @@ indexed_var_assignment = { var_name ~ "[" ~ expression ~ "]" ~ "=" ~ expression 
 export_statement = { "export" ~ var_name ~ ("=" ~ expression)? }
 var_name = @{ (ASCII_ALPHA | "_") ~ (ASCII_ALPHA | "_" | ASCII_DIGIT)* }
 
-expression = { term ~ ( operator ~ term | indexer ~ expression ~ "]" )* }
-operator = _{ add | subtract | multiply| divide | power | equals | less_than | greater_than | not_equals | and | or }
+expression = { term ~ ( operator ~ term | indexer ~ expression ~ "]" | function_call_indicator ~ expression ~ ")" )* }
+operator = _{ add | subtract | multiply| divide | power | equals | less_than | greater_than | not_equals | and | or | arg_list_constructor | map_field_constructor }
     add = { "+" }
     subtract = { "-" }
     multiply = { "*" }
@@ -57,17 +59,20 @@ operator = _{ add | subtract | multiply| divide | power | equals | less_than | g
     not_equals = { "!=" }
     and = { "&&" }
     or = { "||" }
+    arg_list_constructor = { "," }
+    map_field_constructor = { ":" }
 
 indexer = { "[" }
+function_call_indicator = { "(" }
 
-term = _{ literal | function_call |  var_name | env_var |  "(" ~ expression ~ ")" | not_expression }
+term = _{ literal |  var_name | env_var |  "(" ~ expression ~ ")" | not_expression | anonymous_function | empty_expression_list }
+empty_expression_list = { &( ")" | "]" | "}" ) }
 not_expression = { ("!" | "not") ~ expression }
 env_var = { "$" ~ var_name }
-function_call = { var_name ~"(" ~ ( expression ~ ("," ~ expression)*)? ~ ")" }
+anonymous_function = { "|" ~ arg_list ~ "|" ~ block }
 literal = { numeric_literal | string_literal | list_literal | map_literal }
 numeric_literal = @{ "-"? ~ ASCII_DIGIT+ ~ ("." ~ ASCII_DIGIT+)? }
 string_literal = @{ "\"" ~ NEWLINE? ~ string_content ~ "\"" }
-list_literal = { "[" ~ ( expression ~ ( "," ~ expression )* )? ~ ","? ~ "]" }
-map_literal = { "{" ~ ( map_field ~ ( "," ~ map_field )* )? ~  "}" }
-map_field = _{ ( string_literal | var_name ) ~ ":" ~ expression }
+list_literal = { "[" ~ expression ~ "]" }
+map_literal = { "{" ~ expression ~  "}" }
 string_content = { ( "\\\"" | !"\"" ~ ANY )* }

@@ -1,9 +1,11 @@
 use std::collections::HashMap;
 use std::rc::Rc;
-use crate::closure::Closure;
 use pest::Span;
 use crate::error::SlashError;
 use std::cell::RefCell;
+use crate::function::{Function, FunctionCallResult};
+use crate::closure::Closure;
+use crate::Slash;
 
 #[derive(Debug, Clone)]
 pub enum Value {
@@ -11,7 +13,7 @@ pub enum Value {
     List(Rc<RefCell<Vec<Value>>>),
     Number(f64),
     String(String),
-    Function(Rc<Vec<String>>, String, Closure),
+    Function(Function),
     ProcessResult(Option<i32>, String, String),
 }
 
@@ -257,7 +259,7 @@ impl Value {
             Value::List(_) => "List",
             Value::Table(_) => "Table",
             Value::ProcessResult(_, _, _) => "Process result",
-            Value::Function(_, _, _) => "Function",
+            Value::Function(_) => "Function",
         }
     }
 
@@ -285,7 +287,7 @@ impl Value {
                 }
                 format!("{} \"stderr\": {}, \"stdout\": {} }}", pre, stderr, stdout)
             }
-            Value::Function(_, _, _) => format!("\"<<function>>\"")
+            Value::Function(_) => format!("\"<<function>>\"")
         }
     }
 
@@ -318,6 +320,15 @@ impl Value {
             }
             _ => Err(SlashError::new(&span, &format!("Trying to index into non-indexable type {}, expected List or Table",self.value_type())))
         }
+    }
+
+    pub fn invoke(&self, args: Vec<Value>, spans: Vec<Span>, closure: &mut Closure, slash: &Slash) -> Result<FunctionCallResult, SlashError> {
+        if let Value::Function(function) = self {
+            function.invoke("(expr)",args,spans,closure,slash)
+        } else {
+            Err(SlashError::new(&spans[0], &format!("The left hand side does not evaluate to a function")))
+        }
+
     }
 }
 

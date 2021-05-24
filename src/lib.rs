@@ -14,9 +14,9 @@ use pest::iterators::Pair;
 use duct;
 use std::ffi::OsString;
 use crate::closure::{Closure};
-use crate::evaluate::{evaluate, evaluate_env_var};
+use crate::evaluate::{evaluate_to_value, evaluate_env_var};
 use std::io::Write;
-use crate::function::function_call;
+use crate::function::{function_call, Function, add_builtin_to_closure};
 use crate::value::Value;
 use std::rc::Rc;
 use crate::error::SlashError;
@@ -47,7 +47,7 @@ pub struct Slash<'a> {
     stdout: Box<RefCell<dyn Write>>,
     stderr: Box<RefCell<dyn Write>>,
     include_dir: &'a Path,
-    args: Rc<Vec<String>>
+    args: Rc<Vec<String>>,
 }
 
 impl Slash<'_> {
@@ -60,6 +60,7 @@ impl Slash<'_> {
     pub fn run(&self) -> Result<(), SlashError> {
         let mut root = Closure::new();
         let mut pairs = SlashParser::parse(Rule::file, self.source)?;
+        add_builtin_to_closure(&mut root);
         self.execute(pairs.next().unwrap(), &mut root)?;
         Ok(())
     }
@@ -84,12 +85,12 @@ impl Slash<'_> {
                     if !res.is_none() { return Ok(res); }
                 }
             }
-            Rule::function_call => { function_call(pair, closure, self)?; }
+            Rule::function_call_statement => { function_call(pair, closure, self)?; }
             Rule::var_declaration => {
                 let mut pairs = pair.into_inner();
                 let var_name = pairs.next().unwrap().as_str();
                 let expression = pairs.next().unwrap();
-                let value = evaluate(expression, closure, self)?;
+                let value = evaluate_to_value(expression, closure, self)?;
                 closure.declare(var_name, value);
             }
             Rule::var_assignment => {
@@ -98,7 +99,7 @@ impl Slash<'_> {
                 let var_name = var_pair.as_str().trim();
                 if closure.has_var(var_name) {
                     let expression = pairs.next().unwrap();
-                    let value = evaluate(expression, closure, self)?;
+                    let value = evaluate_to_value(expression, closure, self)?;
                     closure.assign(var_name, value);
                 } else {
                     return Err(SlashError::new(&var_pair.as_span(), &format!("Variable {} not defined.", var_name)));
@@ -113,9 +114,9 @@ impl Slash<'_> {
                 if closure.has_var(var_name) {
                     let expr_pair = pairs.next().unwrap();
                     let expr_span = expr_pair.as_span();
-                    let index = evaluate(expr_pair, closure, &self)?;
+                    let index = evaluate_to_value(expr_pair, closure, &self)?;
                     let expression = pairs.next().unwrap();
-                    let value = evaluate(expression, closure, self)?;
+                    let value = evaluate_to_value(expression, closure, self)?;
 
                     let lhs_val = closure.lookup(var_name);
                     let lhs_val_type = lhs_val.value_type();
@@ -174,7 +175,7 @@ impl Slash<'_> {
                 let var_name = pairs.next().unwrap().as_str();
                 let expression = pairs.next().unwrap();
                 let expression_span = expression.as_span();
-                if let Value::List(list) = evaluate(expression, closure, self)? {
+                if let Value::List(list) = evaluate_to_value(expression, closure, self)? {
                     let block = pairs.next().unwrap();
                     let mut inner_closure = closure.derived();
 
@@ -215,10 +216,10 @@ impl Slash<'_> {
                 let update_expression = update_assignment_pairs.next().unwrap();
                 let block = pairs.next().unwrap();
                 let mut inner_closure = closure.derived();
-                let loop_value = evaluate(init_expression, &mut inner_closure, self)?;
+                let loop_value = evaluate_to_value(init_expression, &mut inner_closure, self)?;
                 inner_closure.declare(var_name, loop_value);
                 loop {
-                    let val = evaluate(continue_expression.clone(), &mut inner_closure, self)?;
+                    let val = evaluate_to_value(continue_expression.clone(), &mut inner_closure, self)?;
                     if !val.is_true() { break; }
                     let mut break_loop = false;
                     for p in block.clone().into_inner() {
@@ -234,7 +235,7 @@ impl Slash<'_> {
                         }
                     }
                     if break_loop { break; }
-                    let loop_value = evaluate(update_expression.clone(), &mut inner_closure, self)?;
+                    let loop_value = evaluate_to_value(update_expression.clone(), &mut inner_closure, self)?;
                     inner_closure.assign(var_name, loop_value);
                 }
             }
@@ -247,7 +248,7 @@ impl Slash<'_> {
                             match p.as_rule() {
                                 Rule::expression => { // if p branch
                                     let branch = pairs.next().unwrap();
-                                    if evaluate(p, closure, self)?.is_true() {
+                                    if evaluate_to_value(p, closure, self)?.is_true() {
                                         let res = self.execute(branch, closure)?;
                                         if !res.is_none() { return Ok(res); }
                                         break;
@@ -272,11 +273,11 @@ impl Slash<'_> {
                         Rule::var_name => formal_args.push(String::from(p.as_str())),
                         Rule::block => {
                             closure.declare(function_name,
-                                            Value::Function(
+                                            Value::Function(Function::User(
                                                 Rc::new(formal_args),
                                                 String::from(p.as_str()),
                                                 closure.clone(),
-                                            ));
+                                            )));
                             break;
                         }
                         _ => unreachable!()
@@ -286,7 +287,7 @@ impl Slash<'_> {
             Rule::return_statement => {
                 let span = pair.as_span();
                 let expression = pair.into_inner().next().unwrap();
-                let value = evaluate(expression, closure, self)?;
+                let value = evaluate_to_value(expression, closure, self)?;
                 return Ok(ExecuteResult::Return(value, span));
             }
             Rule::break_statement => { return Ok(ExecuteResult::Break(pair.as_span())); }
@@ -296,7 +297,7 @@ impl Slash<'_> {
                 let var_pair = pairs.next().unwrap();
                 let var_name = var_pair.as_str().trim();
                 if let Some(expr_pair) = pairs.next() {
-                    let value = evaluate(expr_pair, closure, self)?;
+                    let value = evaluate_to_value(expr_pair, closure, self)?;
                     closure.declare(var_name, value);
                 } else {
                     if !closure.has_var(var_name) {
@@ -307,7 +308,7 @@ impl Slash<'_> {
             }
             Rule::match_statement => {
                 let mut pairs = pair.into_inner();
-                let match_value = evaluate(pairs.next().unwrap(), closure, self)?;
+                let match_value = evaluate_to_value(pairs.next().unwrap(), closure, self)?;
                 loop {
                     match pairs.next() {
                         None => break,
@@ -390,7 +391,7 @@ impl Slash<'_> {
                 let t_sp = term.as_span();
                 let v = match term.as_rule() {
                     Rule::env_var => evaluate_env_var(closure, term)?,
-                    Rule::expression => evaluate(term, closure, self)?,
+                    Rule::expression => evaluate_to_value(term, closure, self)?,
                     _ => unreachable!()
                 };
                 if let Value::String(str) = v {
@@ -412,12 +413,12 @@ impl Slash<'_> {
             let mut expressions = match_expression_pair.into_inner();
             let first_expression_pair = expressions.next().unwrap();
             let first_expression_pair_span = first_expression_pair.as_span();
-            let first = evaluate(first_expression_pair, closure, self)?;
+            let first = evaluate_to_value(first_expression_pair, closure, self)?;
 
             if let Some(second) = expressions.next() {
                 let second_expression_pair_span = second.as_span();
-                let second = evaluate(second, closure, self)?;
-                if first._less_than_or_equals(value,&first_expression_pair_span)? &&
+                let second = evaluate_to_value(second, closure, self)?;
+                if first._less_than_or_equals(value, &first_expression_pair_span)? &&
                     second._greater_than_or_equals(value, &second_expression_pair_span)? {
                     return Ok(true);
                 }

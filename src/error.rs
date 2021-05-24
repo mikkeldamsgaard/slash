@@ -3,6 +3,7 @@ use pest::error::{Error, LineColLocation};
 use crate::Rule;
 use std::fmt::{Display, Formatter};
 
+#[derive(Debug)]
 pub struct SlashError {
     err: String,
     error_line: String,
