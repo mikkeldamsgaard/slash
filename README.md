@@ -3,7 +3,7 @@ The system level language for getting the job done.
 
 Detailed documentation is available on the [Slash site](https://slashlang.org/)
 
-##Motivation
+## Motivation
 Bash is an awesome shell, but for shell programming, bash is
 very antiquated, arcane, hard to reason about and just plain 
 annoying to implement any logic in. 
