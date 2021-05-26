@@ -304,7 +304,7 @@ Prints to standard out
 ```javascript
 print(1,2,"abc") # prints 1 2 abc
 ```
-prints arguments seperated with a space
+prints arguments separated with a space
 ### println
 Identical to print, but add a newline
 ### len
@@ -317,7 +317,7 @@ Converts a string to a float
 is_float, is_string, is_list, is_table, is_process_result
 Returns 1 if the argument is the corresponding type
 ### process result extracts
-```javascript
+```bash
 stdout(proc_res) # stdout of the process as a string, throws error if the output is not a valid utf8 string
 stderr(proc_res) # stderr of the process as a string, throws error if the output is not a valid utf8 string
 exit_code(proc_res) # exit code  of the process

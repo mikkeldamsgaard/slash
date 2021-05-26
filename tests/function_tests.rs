@@ -66,3 +66,45 @@ fn test_fun() {
     print(add(1,2)) # 3
     "##,"3");
 }
+
+#[test]
+fn test_builtin() {
+    common::run(r##"
+    print()
+    "##,"");
+
+    common::run(r##"
+    print(1,2,[1]) # prints "1 2 [1]" to stdout
+    "##,"1 2 [1]");
+
+    common::run(r##"
+    if is_number(2) { print("pass") }
+    if is_number("1") { print("fail") }
+    "##,"pass");
+
+    common::run(r##"
+    if is_string("2") { print("pass") }
+    if is_string(1) { print("fail") }
+    "##,"pass");
+
+    common::run(r##"
+    if is_list([]) { print("pass") }
+    if is_list("1") { print("fail") }
+    "##,"pass");
+
+    common::run(r##"
+    if is_table({}) { print("pass") }
+    if is_table("1") { print("fail") }
+    "##,"pass");
+
+    common::run(r##"
+    if is_function(|| {}) { print("pass") }
+    if is_function("1") { print("fail") }
+    "##,"pass");
+
+    common::run(r##"
+    echo $> pr
+    if is_process_result(pr) { print("pass") }
+    if is_process_result("1") { print("fail") }
+    "##,"pass");
+}

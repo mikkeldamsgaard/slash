@@ -59,6 +59,21 @@ pub fn add_builtin_to_closure(closure: &mut Closure) {
             }),
         },
         Builtin {
+            name: "eprint".to_owned(),
+            function: Rc::new(|args, _spans, _closure, slash| {
+                eprint(args, slash);
+                Ok(NoValue(String::from("eprint")))
+            }),
+        },
+        Builtin {
+            name: "eprintln".to_owned(),
+            function: Rc::new(|args, _spans, _closure, slash| {
+                eprint(args, slash);
+                slash.write_stderr("\n");
+                Ok(NoValue(String::from("eprintln")))
+            }),
+        },
+        Builtin {
             name: "len".to_owned(),
             function: Rc::new(|args, spans, _closure, _slash| {
                 verify_formal_args(&args, &spans, 1)?;
@@ -78,7 +93,7 @@ pub fn add_builtin_to_closure(closure: &mut Closure) {
             }),
         },
         Builtin {
-            name: "parse_float".to_owned(),
+            name: "parse_number".to_owned(),
             function: Rc::new(|args, spans, _closure, _slash| {
                 verify_formal_args(&args, &spans, 1)?;
                 if let Value::String(s) = &args[0] {
@@ -92,58 +107,45 @@ pub fn add_builtin_to_closure(closure: &mut Closure) {
             }),
         },
         Builtin {
-            name: "is_float".to_owned(),
+            name: "is_number".to_owned(),
             function: Rc::new(|args, spans, _closure, _slash| {
                 verify_formal_args(&args, &spans, 1)?;
-                if let Value::Number(_) = &args[0] {
-                    Ok(FunctionCallResult::Value(Value::Number(1.0)))
-                } else {
-                    Ok(FunctionCallResult::Value(Value::Number(0.0)))
-                }
+                Ok(FunctionCallResult::Value(Value::Number(if let Value::Number(_) = &args[0] { 1.0 } else { 0.0 })))
             }),
         },
         Builtin {
             name: "is_list".to_owned(),
             function: Rc::new(|args, spans, _closure, _slash| {
                 verify_formal_args(&args, &spans, 1)?;
-                if let Value::List(_) = &args[0] {
-                    Ok(FunctionCallResult::Value(Value::Number(1.0)))
-                } else {
-                    Ok(FunctionCallResult::Value(Value::Number(0.0)))
-                }
+                Ok(FunctionCallResult::Value(Value::Number(if let Value::List(_) = &args[0] { 1.0 } else { 0.0 })))
             }),
         },
         Builtin {
             name: "is_table".to_owned(),
             function: Rc::new(|args, spans, _closure, _slash| {
                 verify_formal_args(&args, &spans, 1)?;
-                if let Value::Table(_) = &args[0] {
-                    Ok(FunctionCallResult::Value(Value::Number(1.0)))
-                } else {
-                    Ok(FunctionCallResult::Value(Value::Number(0.0)))
-                }
+                Ok(FunctionCallResult::Value(Value::Number(if let Value::Table(_) = &args[0] { 1.0 } else { 0.0 })))
             }),
         },
         Builtin {
             name: "is_string".to_owned(),
             function: Rc::new(|args, spans, _closure, _slash| {
                 verify_formal_args(&args, &spans, 1)?;
-                if let Value::String(_) = &args[0] {
-                    Ok(FunctionCallResult::Value(Value::Number(1.0)))
-                } else {
-                    Ok(FunctionCallResult::Value(Value::Number(0.0)))
-                }
+                Ok(FunctionCallResult::Value(Value::Number(if let Value::String(_) = &args[0] { 1.0 } else { 0.0 })))
             }),
         },
         Builtin {
             name: "is_process_result".to_owned(),
             function: Rc::new(|args, spans, _closure, _slash| {
                 verify_formal_args(&args, &spans, 1)?;
-                if let Value::ProcessResult(_, _, _) = &args[0] {
-                    Ok(FunctionCallResult::Value(Value::Number(1.0)))
-                } else {
-                    Ok(FunctionCallResult::Value(Value::Number(0.0)))
-                }
+                Ok(FunctionCallResult::Value(Value::Number(if let Value::ProcessResult(_, _, _) = &args[0] { 1.0 } else { 0.0 })))
+            }),
+        },
+        Builtin {
+            name: "is_function".to_owned(),
+            function: Rc::new(|args, spans, _closure, _slash| {
+                verify_formal_args(&args, &spans, 1)?;
+                Ok(FunctionCallResult::Value(Value::Number(if let Value::Function(_) = &args[0] { 1.0 } else { 0.0 })))
             }),
         },
         Builtin {
@@ -335,10 +337,19 @@ pub fn function_call(pair: Pair<Rule>, closure: &mut Closure, slash: &Slash) -> 
     function.invoke(args,func_spans,closure, slash)
 }
 
-fn print(args: Vec<Value>, slash: &Slash) {
+fn format_args(args: Vec<Value>) -> String {
+    if args.is_empty() { return "".to_owned()}
     let mut s = String::new();
     args.iter().for_each(|a| s.push_str(&format!(" {}", &a.to_string())));
-    slash.write_stdout(&s[1..]);
+    return s[1..].to_owned();
+}
+
+fn print(args: Vec<Value>, slash: &Slash) {
+    slash.write_stdout(&format_args(args));
+}
+
+fn eprint(args: Vec<Value>, slash: &Slash) {
+    slash.write_stderr(&format_args(args));
 }
 
 fn verify_formal_args(args: &Vec<Value>, spans: &Vec<Span>, num: usize) -> Result<(), SlashError> {

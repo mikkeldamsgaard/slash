@@ -377,6 +377,10 @@ impl Slash<'_> {
         self.stdout.borrow_mut().write_fmt(format_args!("{}", msg)).expect("Failed to write to stdout");
     }
 
+    pub fn write_stderr(&self, msg: &str) {
+        self.stderr.borrow_mut().write_fmt(format_args!("{}", msg)).expect("Failed to write to stdout");
+    }
+
     fn create_cmd(&self, ast: Pair<Rule>, closure: &mut Closure) -> Result<duct::Expression, SlashError> {
         //println!("to_cmd ast={:?}", ast);
         let mut pairs = ast.into_inner();
