@@ -18,6 +18,7 @@ enum EvalResult<'a> {
     ArgList(Vec<(Value, Span<'a>)>),
     FieldMap(String, Value, Span<'a>),
     FieldList(Vec<(String, Value)>),
+    Slice(Value, Value, Span<'a>)
 }
 
 lazy_static! {
@@ -26,7 +27,7 @@ lazy_static! {
         use Assoc::*;
 
         PrecClimber::new(vec![
-            Operator::new(arg_list_constructor, Left),
+            Operator::new(arg_list_constructor, Left) | Operator::new(slice_constructor, Left),
             Operator::new(map_field_constructor, Left),
             Operator::new(or, Left),
             Operator::new(and, Left),
@@ -194,6 +195,11 @@ fn do_climb<'a>(expression: Pair<'a, Rule>, closure: &mut Closure, slash: &Slash
                     let rhs = v(rhs, &op_span, &cl.borrow())?;
                     Ok(FieldMap(lhs.to_string().to_owned(), rhs, infix_expression_span))
                 }
+                Rule::slice_constructor => {
+                    let lhs = v(lhs, &op_span, &cl.borrow())?;
+                    let rhs = v(rhs, &op_span, &cl.borrow())?;
+                    Ok(Slice(lhs, rhs, infix_expression_span))
+                }
                 Rule::infix_dot => {
                     let lhs = v(lhs, &op_span, &cl.borrow())?;
                     let rhs = rhs?;
@@ -214,6 +220,16 @@ fn do_climb<'a>(expression: Pair<'a, Rule>, closure: &mut Closure, slash: &Slash
                         Err(SlashError::new(&op_span, "Right hand side of a . operator must be an identifier"))
                     }
                 }
+                Rule::indexer => {
+                    let lhs = v(lhs, &op_span, &cl.borrow());
+                    match rhs? {
+                        Val(v, _) => Ok(Val(lhs?.lookup_by_index(&v, &op_span)?, infix_expression_span)),
+                        Slice(from, to, _) => {
+                            Ok(Val(lhs?.slice(&from, &to, &op_span)?, infix_expression_span))
+                        }
+                        _ => Err(SlashError::new(&infix_expression_span, "Expected slice operator or value"))
+                    }
+                }
                 _ => {
                     let lhs = v(lhs, &op_span, &cl.borrow());
                     let rhs = v(rhs, &op_span, &cl.borrow());
@@ -229,7 +245,7 @@ fn do_climb<'a>(expression: Pair<'a, Rule>, closure: &mut Closure, slash: &Slash
                         Rule::not_equals => Ok(Val(lhs?.not_equals(&rhs?, &op_span)?, infix_expression_span)),
                         Rule::greater_than => Ok(Val(lhs?.greater_than(&rhs?, &op_span)?, infix_expression_span)),
                         Rule::less_than => Ok(Val(lhs?.less_than(&rhs?, &op_span)?, infix_expression_span)),
-                        Rule::indexer => Ok(Val(lhs?.lookup_by_index(&rhs?, &op_span)?, infix_expression_span)),
+
                         _ => unreachable!()
                     }
                 }

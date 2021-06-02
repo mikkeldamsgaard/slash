@@ -95,7 +95,7 @@ mod tests {
 
     #[test]
     fn ref_test() {
-        let mut ch = Closure::new();
+        let ch = Closure::new();
         ch.derived();
         ch.derived();
 

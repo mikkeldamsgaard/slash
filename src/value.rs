@@ -39,7 +39,7 @@ impl Value {
                         let mut res: Vec<Value> = lhs_val.borrow().clone();
                         res.append(&mut rhs_val.borrow_mut());
                         Ok(List(Rc::new(RefCell::new(res.to_vec()))))
-                    },
+                    }
                     _ => Err(SlashError::new(&span, "Add left hand side is List, expected List on right hand side"))
                 }
             }
@@ -291,20 +291,22 @@ impl Value {
         }
     }
 
+    fn _to_s32(&self, span: &Span) -> Result<i32, SlashError> {
+        if let Value::Number(raw) = self {
+            Ok(*raw as i32)
+        } else {
+            Err(SlashError::new(&span, &format!("Index value not a number, but a {}", self.value_type())))
+        }
+    }
 
     pub fn lookup_by_index(&self, index: &Value, span: &Span) -> Result<Value, SlashError> {
         match self {
             Value::List(l) => {
-                let i_index;
-                if let Value::Number(raw) = index {
-                    if 0.0 <= *raw && *raw < l.borrow().len() as f64 {
-                        i_index = usize::from(*raw as u16);
-                        Ok(l.borrow()[i_index].clone())
-                    } else {
-                        Err(SlashError::new(&span, &format!("Index out of bounds. Value length is {} index was {}", l.borrow().len(), raw)))
-                    }
+                let index = index._to_s32(span)?;
+                if 0 <= index &&  index < l.borrow().len() as i32 {
+                    Ok(l.borrow()[index as usize].clone())
                 } else {
-                    Err(SlashError::new(&span, &format!("Index value not a number, but a {}", index.value_type())))
+                    Err(SlashError::new(&span, &format!("Index out of bounds. Value length is {} index was {}", l.borrow().len(), index)))
                 }
             }
             Value::Table(t) => {
@@ -322,6 +324,21 @@ impl Value {
         }
     }
 
+    pub fn slice(&self, from: &Value, to: &Value, span: &Span) -> Result<Value, SlashError> {
+        match self {
+            Value::List(l) => {
+                let from = from._to_s32(span)?;
+                let to = to._to_s32(span)?;
+                if 0 <= from && from <= to && to <= l.borrow().len() as i32 {
+                    Ok(Value::List(Rc::new(RefCell::new(l.borrow()[from as usize..to as usize].iter().map(|v| {v.clone()}).collect()))))
+                } else {
+                    Err(SlashError::new(&span, &format!("Slice variables out of bound 0 <= from: {} <= to: {} < length: {}", from, to, l.borrow().len())))
+                }
+            }
+            _ => Err(SlashError::new(&span, &format!("Trying to slice on a non-list type {}, expected List or Table", self.value_type())))
+        }
+    }
+
     pub fn invoke(&self, args: Vec<Value>, spans: Vec<Span>, closure: &mut Closure, slash: &Slash) -> Result<FunctionCallResult, SlashError> {
         if let Value::Function(function) = self {
             function.invoke("(expr)", args, spans, closure, slash)
@@ -329,8 +346,8 @@ impl Value {
             Err(SlashError::new(&spans[0], &format!("The left hand side does not evaluate to a function")))
         }
     }
-
 }
+
 fn bool_to_value(val: bool) -> Value {
     Value::Number(if val { 1.0 } else { 0.0 })
 }

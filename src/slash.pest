@@ -49,7 +49,8 @@ export_statement = { "export" ~ var_name ~ ("=" ~ expression)? }
 var_name = @{ (ASCII_ALPHA | "_") ~ (ASCII_ALPHA | "_" | ASCII_DIGIT)* }
 
 expression = { term ~ ( operator ~ term | indexer ~ expression ~ "]" | function_call_indicator ~ expression ~ ")" )* }
-operator = _{ add | subtract | multiply| divide | power | equals | less_than | greater_than | not_equals | and | or | arg_list_constructor | map_field_constructor | infix_dot }
+operator = _{ add | subtract | multiply| divide | power | equals | less_than | greater_than | not_equals |
+              and | or | arg_list_constructor | map_field_constructor  | slice_constructor | infix_dot}
     add = { "+" }
     subtract = { "-" }
     multiply = { "*" }
@@ -63,6 +64,7 @@ operator = _{ add | subtract | multiply| divide | power | equals | less_than | g
     or = { "||" }
     arg_list_constructor = { "," }
     map_field_constructor = { ":" }
+    slice_constructor = { ".." }
     infix_dot = { "." }
 
 indexer = { "[" }

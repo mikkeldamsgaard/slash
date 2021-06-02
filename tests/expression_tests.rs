@@ -85,6 +85,11 @@ fn test_list() {
     common::run(r##"
     print(join(["p","a"] + ["ss"], ""))
     "##, "pass");
+
+    common::run(r##"
+    print(join(["p","p","a"][1..3] + ["ss"], ""))
+    "##, "pass");
+
 }
 
 #[test]

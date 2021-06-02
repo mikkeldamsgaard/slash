@@ -106,6 +106,21 @@ index must have the syntactic form `` identifier[expr] ``
 where ``identifier`` must resolve to a list value and 
 ``expr`` must resolve to a number value
 
+#### List slicing
+Using the `[..]` operator, it is possible to create a sublist of a list
+```javascript
+let list = [10,20,40,50]
+let sub_list = list[1..3]
+println(sub_list)
+```
+will output `[20,40]`
+
+The general format of the slicing operator is ``list[from..to]``. ``from`` is the index in 
+the list from where to start the slice. ``to`` is the first index in the list to not include.
+The reason for ``to`` to be exclusive is that it makes slicing a tail slightly more
+intuitive as in ``l[2..len(l)]``
+
+
 #### List concatenation
 The `` + `` operator concatenates two lists
 ```javascript
