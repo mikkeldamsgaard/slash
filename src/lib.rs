@@ -21,7 +21,7 @@ use crate::value::Value;
 use std::rc::Rc;
 use crate::error::SlashError;
 use std::cell::RefCell;
-use std::path::Path;
+use std::path::PathBuf;
 use std::env;
 
 #[derive(Debug, Clone)]
@@ -46,15 +46,15 @@ pub struct Slash<'a> {
     source: &'a str,
     stdout: Box<RefCell<dyn Write>>,
     stderr: Box<RefCell<dyn Write>>,
-    include_dir: &'a Path,
+    include_dir: RefCell<PathBuf>,
     args: Rc<Vec<String>>,
 }
 
 impl Slash<'_> {
     pub fn new<'a>(source: &'a str, stdout: Box<RefCell<dyn Write>>,
-                   stderr: Box<RefCell<dyn Write>>, include_dir: &'a Path,
+                   stderr: Box<RefCell<dyn Write>>, include_dir: PathBuf,
                    args: Vec<String>) -> Slash<'a> {
-        Slash { source, stdout, stderr, include_dir, args: Rc::new(args) }
+        Slash { source, stdout, stderr, include_dir: RefCell::new(include_dir), args: Rc::new(args) }
     }
 
     pub fn run(&self) -> Result<(), SlashError> {

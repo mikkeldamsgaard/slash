@@ -3,7 +3,7 @@ use tempfile::NamedTempFile;
 use std::io;
 use std::io::Read;
 use std::cell::RefCell;
-use std::path::Path;
+use std::path::PathBuf;
 
 pub fn run(src: &str, expected_output: &str) {
     let (stdout, stderr) = do_run(src).expect("Failed to run");
@@ -21,7 +21,7 @@ fn do_run(src: &str) -> io::Result<(String, String)> {
     let res = slash::Slash::new(src,
                                 Box::new(RefCell::new(tmp_stdout.reopen()?)),
                                 Box::new(RefCell::new(tmp_stderr.reopen()?)),
-                                Path::new("tests/testfiles"),
+                                PathBuf::from("tests/testfiles"),
                                 vec!()
     ).run();
     if let Err(err) = res {

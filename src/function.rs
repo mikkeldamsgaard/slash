@@ -15,6 +15,7 @@ use std::ffi::OsStr;
 use std::rc::Rc;
 use std::cell::RefCell;
 use std::fmt::{Debug, Formatter};
+use std::path::PathBuf;
 
 pub enum FunctionCallResult {
     NoValue(String),
@@ -204,14 +205,24 @@ pub fn add_builtin_to_closure(closure: &mut Closure) {
                     Value::String(file) => {
                         let mut file = String::from(file);
                         if !file.starts_with("/") {
-                            let cd = slash.include_dir.to_str().ok_or::<Result<&OsStr, SlashError>>(Err(SlashError::new(&spans[0], &format!("Could not retrieve current dir during include"))))?;
+                            let id = slash.include_dir.borrow();
+                            let cd = id.to_str().ok_or::<Result<&OsStr, SlashError>>(Err(SlashError::new(&spans[0], &format!("Could not retrieve current dir during include"))))?;
                             //let cd = dbg!(cd).to_str().ok_or::<Result<&str,SlashError>>(Err(SlashError::new(&spans[0], &format!("Could not retrieve current dir during include"))))?;
                             file = cd.to_owned() + "/" + &file;
                         }
 
                         let src = fs::read_to_string(&file).or(Err(SlashError::new(&spans[1], &format!("Failed to load content of file {}", &file))))?;
                         let mut pairs = crate::SlashParser::parse(Rule::file, &src)?;
+
+                        let saved_include_dir = slash.include_dir.borrow().clone();
+
+                        let mut sub_include_dir =  PathBuf::from(&file);
+                        sub_include_dir.pop();
+                        slash.include_dir.replace(sub_include_dir);
+
                         slash.execute(pairs.next().unwrap(), closure)?;
+
+                        slash.include_dir.replace(saved_include_dir);
 
                         Ok(FunctionCallResult::NoValue(String::from("include")))
                     }
@@ -273,7 +284,8 @@ pub fn add_builtin_to_closure(closure: &mut Closure) {
             name: "path_of_script".to_owned(),
             function: Rc::new(|args, spans, _closure, slash| {
                 verify_formal_args(&args, &spans, 0)?;
-                let include_dir = slash.include_dir.to_str().ok_or::<Result<&OsStr, SlashError>>(Err(SlashError::new(&spans[0], &format!("Could not retrieve current dir during include"))))?;
+                let include_dir = slash.include_dir.borrow();
+                let include_dir = include_dir.to_str().ok_or::<Result<&OsStr, SlashError>>(Err(SlashError::new(&spans[0], &format!("Could not retrieve current dir during include"))))?;
                 Ok(FunctionCallResult::Value(Value::String(String::from(include_dir))))
             }),
         },

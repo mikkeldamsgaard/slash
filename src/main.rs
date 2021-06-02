@@ -26,7 +26,7 @@ fn main() {
     let res = slash::Slash::new(&src,
                                 Box::new(RefCell::new(stdout())),
                                 Box::new(RefCell::new(stderr())),
-                                cur_dir.as_path(),
+                                cur_dir,
                                  args
     ).run();
 
