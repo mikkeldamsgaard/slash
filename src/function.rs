@@ -264,6 +264,14 @@ pub fn add_builtin_to_closure(closure: &mut Closure) {
             }),
         },
         Builtin {
+            name: "trim".to_owned(),
+            function: Rc::new(|args, spans, _closure, _slash| {
+                verify_formal_args(&args, &spans, 1)?;
+                let s = get_string(&args[0], &spans[1])?;
+                Ok(FunctionCallResult::Value(Value::String(String::from(s.trim()))))
+            }),
+        },
+        Builtin {
             name: "join".to_owned(),
             function: Rc::new(|args, spans, _closure, _slash| {
                 verify_formal_args(&args, &spans, 2)?;

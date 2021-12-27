@@ -107,4 +107,16 @@ fn test_builtin() {
     if is_process_result(pr) { print("pass") }
     if is_process_result("1") { print("fail") }
     "##,"pass");
+
+    common::run(r##"
+    let r = "pass"
+    if starts_with(r,"pass") { print("pass") }
+    else { print("fail") }
+    "##,"pass");
+
+    common::run(r##"
+    let r = "  pass  "
+    if trim(r) == "pass" { print("pass") }
+    else { print("fail") }
+    "##,"pass");
 }

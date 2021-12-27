@@ -82,7 +82,7 @@ impl Closure {
     }
 
     fn i_export(data: &Rc<RefCell<ClosureData>>, res: &mut HashMap<String,String>) {
-        &data.borrow().exports.iter().for_each(|v| {res.insert(v.clone(), Closure::i_lookup(data,&v).to_string());});
+        let _ = &data.borrow().exports.iter().for_each(|v| {res.insert(v.clone(), Closure::i_lookup(data,&v).to_string());});
         if let Some(p) = &data.borrow().parent {
             Closure::i_export(p, res);
         }

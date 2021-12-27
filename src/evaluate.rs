@@ -169,12 +169,13 @@ fn do_climb<'a>(expression: Pair<'a, Rule>, closure: &mut Closure, slash: &Slash
                     match rhs? {
                         Val(rhs_val, rhs_span) => {
                             match lhs? {
-                                Val(lhs_val, lhs_span) => { Ok(ArgList(vec!((lhs_val, lhs_span), (rhs_val, rhs_span)))) }
+                                Val(lhs_val, lhs_span) => { Ok(ArgList(vec!((lhs_val, lhs_span), (rhs_val, rhs_span)))) },
+                                Var(var_name, lhs_span) => { Ok(ArgList(vec!((cl.borrow().lookup(&var_name), lhs_span), (rhs_val, rhs_span)))) },
                                 ArgList(mut v) => {
                                     v.push((rhs_val, rhs_span));
                                     Ok(ArgList(v))
                                 }
-                                _ => Err(SlashError::new(&op_span, "Expected a value or an list of values on left hand side"))
+                                _ => Err(SlashError::new(&op_span, "Expected a value or a list of values on left hand side"))
                             }
                         }
                         FieldMap(key, val, _span) => {
@@ -184,7 +185,7 @@ fn do_climb<'a>(expression: Pair<'a, Rule>, closure: &mut Closure, slash: &Slash
                                     v.push((key, val));
                                     Ok(FieldList(v))
                                 }
-                                _ => Err(SlashError::new(&op_span, "Expected a field or a list of field on left hand side"))
+                                _ => Err(SlashError::new(&op_span, "Expected a field or a list of fields on left hand side"))
                             }
                         }
                         _ => Err(SlashError::new(&op_span, "Expected a value or a field on right hand side"))
