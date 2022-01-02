@@ -17,9 +17,9 @@ redirection = _{ redirection_append | redirection_create }
 redirection_append =  { ">>" ~ command_element }
 redirection_create =  { ">" ~ command_element }
 capture = { "$>" ~ var_name }
-command = ${ command_element ~ (command_whitespace+ ~ command_element)* ~ command_whitespace* }
-command_whitespace = _{ " " | "\t" | ("\\" ~ NEWLINE) }
-command_element = _{ !"$>" ~ (env_var | "$(" ~ expression ~ ")" | string_literal | word) }
+command = ${ command_element+ }
+command_whitespace = { (" " | "\t" | ("\\" ~ NEWLINE))+ }
+command_element = _{ !"$>" ~ (command_whitespace | env_var | "$(" ~ expression ~ ")" | string_literal | word) }
 
 while_statement = { "while" ~ expression ~ block }
 

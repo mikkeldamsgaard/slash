@@ -25,6 +25,7 @@ use std::collections::VecDeque;
 use std::path::PathBuf;
 use std::env;
 use std::fs::OpenOptions;
+use std::ops::Add;
 
 #[derive(Debug, Clone)]
 pub enum ExecuteResult<'a> {
@@ -409,13 +410,36 @@ impl Slash<'_> {
 
     fn create_cmd(&self, ast: Pair<Rule>, closure: &mut Closure) -> Result<duct::Expression, SlashError> {
         //println!("to_cmd ast={:?}", ast);
-        let mut pairs = ast.into_inner();
-        let program = self.parse_prg_or_arg(pairs.next().unwrap(), closure)?;
+        let pairs = ast.into_inner();
 
+        let mut program: String = String::new();
         let mut args = Vec::new();
+
+        const PARSING_PROGRAM: i32 = 1;
+        const PARSING_ARGS: i32 = 2;
+        let mut state = PARSING_PROGRAM;
+        let mut cur: String = String::new();
         for r in pairs {
-            args.push(self.parse_prg_or_arg(r, closure)?);
+            match r.as_rule() {
+                Rule::command_whitespace => {
+                    match state {
+                        PARSING_PROGRAM => { program = cur; state = PARSING_ARGS; },
+                        PARSING_ARGS => { args.push(cur); }
+                        _ => unreachable!()
+                    }
+                    cur = String::new();
+                },
+                _ => { cur = cur.add(&self.parse_prg_or_arg(r, closure)?); }
+            }
         }
+
+        match state {
+            PARSING_PROGRAM => program = cur,
+            PARSING_ARGS => if cur != "" { args.push(cur) },
+            _ => unreachable!()
+        }
+
+        //dbg!(&program,&args);
         let expr = duct::cmd(program, args.clone().iter().map(|i| Into::<OsString>::into(i)));
         let mut full_env = closure.exports();
         env::vars().for_each(|f| {
