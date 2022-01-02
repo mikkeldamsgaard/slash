@@ -225,10 +225,11 @@ fn do_climb<'a>(expression: Pair<'a, Rule>, closure: &mut Closure, slash: &Slash
                     let lhs = v(lhs, &op_span, &cl.borrow());
                     match rhs? {
                         Val(v, _) => Ok(Val(lhs?.lookup_by_index(&v, &op_span)?, infix_expression_span)),
+                        Var(var_name, _) => Ok(Val(lhs?.lookup_by_index(&cl.borrow().lookup(&var_name), &op_span)?,infix_expression_span)),
                         Slice(from, to, _) => {
                             Ok(Val(lhs?.slice(&from, &to, &op_span)?, infix_expression_span))
                         }
-                        _ => Err(SlashError::new(&infix_expression_span, "Expected slice operator or value"))
+                        _ => Err(SlashError::new(&infix_expression_span, "Expected slice operator, variable or value"))
                     }
                 }
                 _ => {

@@ -1,20 +1,25 @@
 WHITESPACE = _{  " " | "\t" | NEWLINE }
 COMMENT = _{ "#" ~ (!(NEWLINE | EOI) ~ ANY)* ~ (NEWLINE | &EOI) }
 
-word_char = _{ !(WHITESPACE | "\"" | "\\" | "|" | ">" | " " | ";" | "(" | ")" | "<" | "," | "{" | "}" | "$" | "=" ) ~ ANY }
+word_char = _{ !(WHITESPACE | special_word_char ) ~ ANY | "\\" ~ ANY }
+special_word_char = { "\"" | "\\" | "|" | ">" | "$" | ";" | "}" }
 word = @{ word_char+ }
 
 file = { SOI ~ (block | statement | ";")* ~ EOI }
 block = { "{" ~ (block | statement | ";")* ~ "}" }
-statement = _{ var_declaration | function_declaration | var_assignment | indexed_var_assignment | dot_var_assignment | export_statement  | for_in_statement | for_std_statement | if_statement | return_statement | break_statement | continue_statement | match_statement | function_call_statement | chain }
+statement = _{ var_declaration | function_declaration | var_assignment | indexed_var_assignment | dot_var_assignment |
+ export_statement  | while_statement | for_in_statement | for_std_statement | if_statement | return_statement | break_statement |
+ continue_statement | match_statement | function_call_statement | chain }
 
 chain = { command ~ pipe* ~ redirection? ~ capture? }
 pipe = { "|" ~ command }
-redirection = { (">" | ">>") ~ command }
+redirection = { (">>" | ">") ~ command }
 capture = { "$>" ~ var_name }
-command = ${ command_element ~ (command_whitespace+ ~ command_element)* ~ command_whitespace*}
+command = ${ command_element ~ (command_whitespace+ ~ command_element)* ~ command_whitespace* }
 command_whitespace = _{ " " | "\t" | ("\\" ~ NEWLINE) }
-command_element = _{ (word | string_literal | env_var | "$(" ~ expression ~ ")") + }
+command_element = _{ !"$>" ~ (env_var | "$(" ~ expression ~ ")" | string_literal | word) }
+
+while_statement = { "while" ~ expression ~ block }
 
 for_in_statement = {
     ( "for" ~ var_name ~ "in" ~ expression ~ block ) |
@@ -26,7 +31,7 @@ for_std_statement = {
     "for" ~ "(" ~ var_name ~ "=" ~ expression  ~ ";" ~ expression ~ ";" ~ var_assignment ~ ")" ~ block
 }
 
-if_statement = { "if" ~ expression ~ (statement | block) ~ ("else" ~ "if" ~ expression ~ (statement | block))* ~ ("else"  ~ (statement | block))? }
+if_statement = { "if" ~ expression ~ (block | statement) ~ ("else" ~ "if" ~ expression ~ (block | statement))* ~ ("else"  ~ ( block | statement))? }
 
 function_declaration = { "function" ~ var_name ~ "(" ~ arg_list ~ ")" ~ block }
 arg_list = _{ (var_name ~ ("," ~ var_name)*)? }

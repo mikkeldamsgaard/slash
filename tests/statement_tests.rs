@@ -33,6 +33,20 @@ fn test_for() {
 
 
 #[test]
+fn test_while() {
+    common::run(r##"
+    let p = ["p","a","s","s"]
+    let s = ""
+    let i = 0
+    while i<4 {
+        s = s + p[i]
+        i = i + 1
+    }
+    print(s)
+    "##,"pass");
+}
+
+#[test]
 fn test_if() {
     common::run(r##"if 1 { print("pass") }"##,"pass");
     common::run(r##"if 0 { print("fail") }"##,"");

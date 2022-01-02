@@ -21,6 +21,7 @@ use crate::value::Value;
 use std::rc::Rc;
 use crate::error::SlashError;
 use std::cell::RefCell;
+use std::collections::VecDeque;
 use std::path::PathBuf;
 use std::env;
 
@@ -187,6 +188,23 @@ impl Slash<'_> {
 
                 self.run_chain(command, vec, redirection, capture, closure)?;
             }
+            Rule::while_statement => {
+                let mut pairs = pair.into_inner();
+                let expression = pairs.next().unwrap();
+                let body = pairs.next().unwrap();
+                let mut inner_closure = closure.derived();
+                loop {
+                    if !evaluate_to_value(expression.clone(), closure, self)?.is_true() {
+                        break;
+                    }
+
+                    match self.execute_loop_body(body.clone(), &mut inner_closure)? {
+                        ExecuteResult::Return(v,s) => return Ok(ExecuteResult::Return(v,s)),
+                        ExecuteResult::Break(_) => { break; }
+                        _ => {}
+                    }
+                }
+            }
             Rule::for_in_statement => {
                 let mut pairs = pair.into_inner();
                 let var_name = pairs.next().unwrap().as_str();
@@ -198,21 +216,11 @@ impl Slash<'_> {
 
                     for v in list.borrow().iter() {
                         inner_closure.declare(var_name, v.clone());
-                        let mut break_loop = false;
-                        for p in block.clone().into_inner() {
-                            let res = self.execute(p, &mut inner_closure)?;
-                            match res {
-                                ExecuteResult::Break(_) => {
-                                    break_loop = true;
-                                    break;
-                                }
-                                ExecuteResult::Continue(_) => { break; }
-                                ExecuteResult::Return(v, s) => return Ok(ExecuteResult::Return(v, s)),
-                                ExecuteResult::None => {}
-                            }
+                        match self.execute_loop_body(block.clone(), &mut inner_closure)? {
+                            ExecuteResult::Return(v,s) => return Ok(ExecuteResult::Return(v,s)),
+                            ExecuteResult::Break(_) => { break; }
+                            _ => {}
                         }
-
-                        if break_loop { break; }
                     }
                 } else {
                     return Err(SlashError::new(&expression_span, &format!("Expected list value")));
@@ -238,20 +246,13 @@ impl Slash<'_> {
                 loop {
                     let val = evaluate_to_value(continue_expression.clone(), &mut inner_closure, self)?;
                     if !val.is_true() { break; }
-                    let mut break_loop = false;
-                    for p in block.clone().into_inner() {
-                        let res = self.execute(p, &mut inner_closure)?;
-                        match res {
-                            ExecuteResult::Break(_) => {
-                                break_loop = true;
-                                break;
-                            }
-                            ExecuteResult::Continue(_) => { break; }
-                            ExecuteResult::Return(v, s) => return Ok(ExecuteResult::Return(v, s)),
-                            ExecuteResult::None => {}
-                        }
+
+                    match self.execute_loop_body(block.clone(), &mut inner_closure)? {
+                        ExecuteResult::Return(v,s) => return Ok(ExecuteResult::Return(v,s)),
+                        ExecuteResult::Break(_) => { break; }
+                        _ => {}
                     }
-                    if break_loop { break; }
+
                     let loop_value = evaluate_to_value(update_expression.clone(), &mut inner_closure, self)?;
                     inner_closure.assign(var_name, loop_value);
                 }
@@ -345,6 +346,19 @@ impl Slash<'_> {
         Ok(ExecuteResult::None)
     }
 
+    fn execute_loop_body<'a>(&self, block: Pair<'a,Rule>, mut closure: &mut Closure) -> Result<ExecuteResult<'a>, SlashError>{
+        for p in block.into_inner() {
+            let res = self.execute(p, &mut closure)?;
+            match res {
+                ExecuteResult::Break(s) => return Ok(ExecuteResult::Break(s)),
+                ExecuteResult::Continue(_) => break,
+                ExecuteResult::Return(v, s) => return Ok(ExecuteResult::Return(v, s)),
+                ExecuteResult::None => ()
+            }
+        }
+        Ok(ExecuteResult::None)
+    }
+
     fn run_chain(&self, command: Pair<Rule>, pipes: Vec<Pair<Rule>>, redirect: Option<Pair<Rule>>, capture: Option<Pair<Rule>>, closure: &mut Closure) -> Result<(), SlashError> {
         let command_span = command.as_span();
         let mut cmd = self.create_cmd(command, closure)?;
@@ -405,7 +419,7 @@ impl Slash<'_> {
 
     fn parse_prg_or_arg(&self, term: Pair<Rule>, closure: &mut Closure) -> Result<String, SlashError> {
         match term.as_rule() {
-            Rule::word => Ok(String::from(term.as_str())),
+            Rule::word => Ok(Self::unescape_prg_or_arg(&term)),
             Rule::string_literal => Ok(Value::convert_parsed_string(term.as_str())),
             _ => {
                 let t_str = term.as_str();
@@ -422,6 +436,24 @@ impl Slash<'_> {
                 }
             }
         }
+    }
+
+    fn unescape_prg_or_arg(term: &Pair<Rule>) -> String {
+        let mut queue: VecDeque<_> = term.as_str().chars().collect();
+        let mut s = String::new();
+
+        while let Some(c) = queue.pop_front() {
+            if c != '\\' {
+                s.push(c);
+                continue;
+            }
+
+            match queue.pop_front() {
+                Some(c) => s.push(c),
+                _ => {}
+            };
+        }
+        s
     }
 
     fn matches(&self, value: &Value, match_expressions: Vec<Pair<Rule>>, closure: &mut Closure) -> Result<bool, SlashError> {
