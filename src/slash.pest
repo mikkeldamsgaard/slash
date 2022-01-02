@@ -13,7 +13,9 @@ statement = _{ var_declaration | function_declaration | var_assignment | indexed
 
 chain = { command ~ pipe* ~ redirection? ~ capture? }
 pipe = { "|" ~ command }
-redirection = { (">>" | ">") ~ command }
+redirection = _{ redirection_append | redirection_create }
+redirection_append =  { ">>" ~ command_element }
+redirection_create =  { ">" ~ command_element }
 capture = { "$>" ~ var_name }
 command = ${ command_element ~ (command_whitespace+ ~ command_element)* ~ command_whitespace* }
 command_whitespace = _{ " " | "\t" | ("\\" ~ NEWLINE) }

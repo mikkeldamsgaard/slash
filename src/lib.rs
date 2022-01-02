@@ -24,6 +24,7 @@ use std::cell::RefCell;
 use std::collections::VecDeque;
 use std::path::PathBuf;
 use std::env;
+use std::fs::OpenOptions;
 
 #[derive(Debug, Clone)]
 pub enum ExecuteResult<'a> {
@@ -172,12 +173,14 @@ impl Slash<'_> {
                 let mut vec = Vec::new();
                 let mut redirection = None;
                 let mut capture = None;
+                let mut append = false;
                 loop {
                     match pairs.next() {
                         Some(p) => {
                             match p.as_rule() {
                                 Rule::pipe => { vec.push(p.into_inner().next().unwrap()); }
-                                Rule::redirection => { redirection = Some(p); }
+                                Rule::redirection_create => { redirection = Some(p); }
+                                Rule::redirection_append => { redirection = Some(p); append = true;}
                                 Rule::capture => { capture = Some(p); }
                                 _ => {}
                             }
@@ -186,7 +189,7 @@ impl Slash<'_> {
                     }
                 }
 
-                self.run_chain(command, vec, redirection, capture, closure)?;
+                self.run_chain(command, vec, redirection, append, capture, closure)?;
             }
             Rule::while_statement => {
                 let mut pairs = pair.into_inner();
@@ -359,7 +362,7 @@ impl Slash<'_> {
         Ok(ExecuteResult::None)
     }
 
-    fn run_chain(&self, command: Pair<Rule>, pipes: Vec<Pair<Rule>>, redirect: Option<Pair<Rule>>, capture: Option<Pair<Rule>>, closure: &mut Closure) -> Result<(), SlashError> {
+    fn run_chain(&self, command: Pair<Rule>, pipes: Vec<Pair<Rule>>, redirect: Option<Pair<Rule>>, append: bool, capture: Option<Pair<Rule>>, closure: &mut Closure) -> Result<(), SlashError> {
         let command_span = command.as_span();
         let mut cmd = self.create_cmd(command, closure)?;
 
@@ -367,12 +370,21 @@ impl Slash<'_> {
             cmd = cmd.pipe(self.create_cmd(x, closure)?);
         }
 
-        cmd = cmd.stdout_capture().stderr_capture();
+        cmd = cmd.stderr_capture();
 
         if let Some(pair) = redirect {
-            // Handle append ">>"
             let out_file = self.parse_prg_or_arg(pair.into_inner().next().unwrap(), closure)?;
-            cmd = cmd.stdout_file(std::fs::File::create(&out_file[..]).unwrap());
+
+            match if append {
+                OpenOptions::new().append(true).create(true).truncate(false).open(&out_file[..])
+            } else {
+                std::fs::File::create(&out_file[..])
+            } {
+                Ok(f) => cmd = cmd.stdout_file(f),
+                Err(e) => return Err(SlashError::new(&command_span, &e.to_string()))
+            }
+        } else {
+            cmd = cmd.stdout_capture();
         }
 
         let out = cmd.unchecked().run().or_else(|e| { Err(SlashError::new(&command_span, &e.to_string())) })?;
