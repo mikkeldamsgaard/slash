@@ -47,6 +47,22 @@ Parses a number from a string
 ```bash
 parse_number("1.42") # Returns the number value 1.42
 ```
+## JSON functions
+Slash has native support for JSON
+
+### json_stringify
+Creates a json representation of any slash value
+```bash
+json_stringify(4) # Returns the string "4"
+json_stringify([2,3]) # Returns the string "[2,3]" 
+```
+
+### json_parse
+Parses a json string into a slash value. Since there a no null values in slash
+a null in a json input file is converted to an empty table
+```bash
+json_parse("{\"a\": 6, \"b\": null) # Returns the table {"a" : 6, "b": {}}
+```
 
 ## Shell functions
 These functions interacts with the execution environment

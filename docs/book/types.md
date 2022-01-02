@@ -76,6 +76,13 @@ if starts_with("abc", "ab") {
 ```
 will print ``abc starts with ab``
 
+#### trim function
+Trims any white space from the start or end of a string
+
+```javascript
+trim("  abc d   ") # will trim the string to "abc d"
+```
+
 ### Lists
 Slash lists are lists of other slash values (including lists). List 
 literals are input using square brackets ``[]`` with individual elements

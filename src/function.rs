@@ -14,8 +14,10 @@ use std::{fs, env, fmt};
 use std::ffi::OsStr;
 use std::rc::Rc;
 use std::cell::RefCell;
+use std::collections::HashMap;
 use std::fmt::{Debug, Formatter};
 use std::path::PathBuf;
+use json::JsonValue;
 
 pub enum FunctionCallResult {
     NoValue(String),
@@ -313,6 +315,45 @@ pub fn add_builtin_to_closure(closure: &mut Closure) {
 
                 let val = lookup_variable_or_environment(&var_name, closure, &spans[1])?;
                 Ok(FunctionCallResult::Value(val))
+            }),
+        },
+        Builtin {
+            name: "json_stringify".to_owned(),
+            function: Rc::new(|args, spans, _closure, _slash| {
+                verify_formal_args(&args, &spans, 1)?;
+                Ok(FunctionCallResult::Value(Value::String(args[0].to_json())))
+            }),
+        },
+        Builtin {
+            name: "json_parse".to_owned(),
+            function: Rc::new(|args, spans, _closure, _slash| {
+
+                fn json_value_to_slash_value(j: &JsonValue) -> Value {
+                    //dbg!(j);
+                    match j {
+                        JsonValue::Number(_) => Value::Number(j.as_f64().unwrap()),
+                        JsonValue::Short(s) => Value::String(s.as_str().to_owned()),
+                        JsonValue::String(s) => Value::String(s.clone()),
+                        JsonValue::Boolean(b) => Value::Number(if *b {1.0} else {0.0}),
+                        JsonValue::Null => Value::Table(Rc::new(RefCell::new(HashMap::new()))),
+                        JsonValue::Array(v) => Value::List(Rc::new(RefCell::new(v.iter().map(|e| json_value_to_slash_value(e)).collect()))),
+                        JsonValue::Object(t) => {
+                            let mut m = HashMap::new();
+                            t.iter().for_each(|n| {
+                                m.insert(n.0.to_owned(), json_value_to_slash_value(n.1));
+                            });
+                            Value::Table(Rc::new(RefCell::new(m)))
+                        }
+                    }
+                }
+                verify_formal_args(&args, &spans, 1)?;
+                let json = get_string(&args[0], &spans[1])?;
+                let j = json::parse(&json);
+
+                match j {
+                    Ok(v) => Ok(FunctionCallResult::Value(json_value_to_slash_value(&v))),
+                    Err(e) => Err(SlashError::new(&spans[0], &e.to_string()))
+                }
             }),
         },
     ).iter().for_each(|bi| closure.declare(&bi.name, Value::Function(Function::Builtin(bi.clone()))));

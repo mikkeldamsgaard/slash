@@ -119,4 +119,23 @@ fn test_builtin() {
     if trim(r) == "pass" { print("pass") }
     else { print("fail") }
     "##,"pass");
+
+    common::run(r##"
+    print(json_parse("\"pass\""))
+    "##, "pass");
+
+    common::run(r##"
+    print(json_parse("[1,2,\"pass\"]")[2])
+    "##, "pass");
+
+    common::run(r##"
+    print(json_parse("{ \"a\":\"pass\", \"b\": 3}")["a"])
+    "##, "pass");
+
+    common::run(r##"
+    if json_parse("{ \"a\":\"pass\", \"b\": 3}")["b"] == 3 {
+        print("pass")
+    }
+    "##, "pass");
+
 }

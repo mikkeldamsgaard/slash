@@ -130,6 +130,17 @@ print("-after")
 ```
 will print ``first-after``
 
+### while loops
+To loop as long as an expression is true
+```javascript
+while (i<10) {
+  print(i)
+  i = i + 1
+}
+```
+
+
+
 ### If statement
 The if statement is a conditional that can conditionally execute blocks.
 
