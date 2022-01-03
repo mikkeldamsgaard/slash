@@ -90,8 +90,9 @@ fn do_climb<'a>(expression: Pair<'a, Rule>, closure: &mut Closure, slash: &Slash
                         Rule::numeric_literal => Ok(Val(Value::Number(literal.as_str().parse::<f64>().unwrap()), expression_span)),
                         Rule::string_literal => Ok(Val(Value::string_from_syntax(literal.as_str()), expression_span)),
                         Rule::list_literal => {
+                            let result = do_climb(literal.into_inner().next().unwrap(), &mut cl.borrow_mut(), slash)?;
                             Ok(Val(Value::List(Rc::new(RefCell::new(
-                                match do_climb(literal.into_inner().next().unwrap(), &mut cl.borrow_mut(), slash)? {
+                                match result {
                                     Val(v, _) => vec!(v),
                                     Var(var_name, _span) => vec!(cl.borrow().lookup(&var_name)),
                                     ArgList(l) => l.into_iter().map(|(v, _s)| v).collect(),

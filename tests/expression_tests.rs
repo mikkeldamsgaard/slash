@@ -77,6 +77,12 @@ fn test_table_literal() {
     print(j.a+1)
     "##, "42");
 
+    common::run(r##"
+    let _42 = 42
+    let j = { "a": _42 }
+    print(j.a+1)
+    "##, "43");
+
 
 }
 
@@ -90,6 +96,11 @@ fn test_list() {
     print(join(["p","p","a"][1..3] + ["ss"], ""))
     "##, "pass");
 
+    common::run(r##"
+    let p = "pass"
+    let l = [p]
+    print(l[0])
+    "##, "pass")
 }
 
 #[test]
