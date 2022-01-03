@@ -270,17 +270,13 @@ impl Value {
             Value::List(l) => {
                 let mut s = String::from("");
                 l.borrow().iter().for_each(|v| s.push_str(&format!(", {}", v.to_json())));
-                if s.len() > 2 {
-                    format!("[{}]", &s[2..])
-                }
+                format!("[{}]", if s.len() > 2 { &s[2..] } else { "" })
             }
             Value::Table(t_r) => {
                 let t = t_r.borrow();
                 let mut s = String::from("");
                 t.keys().for_each(|k| s.push_str(&format!(", \"{}\": {}", Value::escape_string(k), t.get(k).unwrap().to_json())));
-                if s.len() > 2 {
-                    format!("{{{}}}", &s[2..])
-                }
+                format!("{{{}}}", if s.len() > 2 { &s[2..] } else { "" })
             }
             Value::ProcessResult(exitcode, stdout, stderr) => {
                 let pre;
